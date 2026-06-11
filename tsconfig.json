@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/db": ["packages/db/src/index.ts"],
+      "@repo/services": ["packages/services/src/index.ts"],
+      "@repo/google-ads": ["packages/google-ads/src/index.ts"],
+      "@repo/crm": ["packages/crm/src/index.ts"],
+      "@repo/shared": ["packages/shared/src/index.ts"]
+    },
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  }
+}
