@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -639,12 +640,18 @@ function NewRulePageContent() {
               <div className="flex flex-wrap gap-2">
                 {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, idx) => {
                   const dayVal = idx + 1
+                  const isSelected = schedule.days.includes(dayVal)
                   return (
                     <Button 
                       key={day}
-                      variant={schedule.days.includes(dayVal) ? 'default' : 'outline'}
+                      variant={isSelected ? 'default' : 'outline'}
                       size="sm"
-                      className="h-9 w-12 rounded-[calc(var(--radius)*0.8)]"
+                      className={cn(
+                        "h-9 w-12 rounded-[calc(var(--radius)*0.8)] font-semibold transition-all border",
+                        isSelected 
+                          ? "bg-zinc-900 hover:bg-zinc-800 text-zinc-50 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 border-transparent shadow-md scale-105" 
+                          : "text-muted-foreground border-border hover:bg-secondary bg-transparent"
+                      )}
                       onClick={() => {
                         const newDays = schedule.days.includes(dayVal)
                           ? schedule.days.filter(d => d !== dayVal)
