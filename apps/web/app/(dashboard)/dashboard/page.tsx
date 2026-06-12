@@ -357,13 +357,13 @@ export default async function DashboardPage({
     <div className="w-full pb-10 space-y-6 font-sans">
       
       {/* Header controls & Filter dropdowns */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[var(--bg-card)] p-5 rounded-[var(--radius)] border border-[var(--border)] shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-6 rounded-[var(--radius)] border border-border shadow-sm">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--text-1)] flex items-center gap-2">
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             Bảng Điều Khiển Hệ Thống
           </h1>
-          <p className="text-xs text-[var(--text-3)] mt-1">
-            Dữ liệu cập nhật mới nhất lúc: <span className="font-semibold text-[var(--text-2)]">{showDateStr} 21:10</span>
+          <p className="text-xs text-muted-foreground mt-1">
+            Dữ liệu cập nhật mới nhất lúc: <span className="font-semibold text-foreground">{showDateStr} 21:10</span>
           </p>
         </div>
 
@@ -378,62 +378,70 @@ export default async function DashboardPage({
       </div>
 
       {/* KPI Cards Grid - Real data populated */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Spend vs Daily Budget sum */}
-        <div className="bg-[var(--bg-card)] p-5 rounded-[var(--radius)] border border-[var(--border)] shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">
+        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <span>Chi tiêu ads / Ngân sách</span>
-            <DollarSign className="w-4 h-4 text-sky-500" />
+            <div className="p-1.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2.5xl font-black text-[var(--text-1)] tracking-tight leading-none pt-1">
+          <div className="mt-4 text-2.5xl font-extrabold text-foreground tracking-tight leading-none">
             {totalCost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
-          <div className="text-[10px] text-[var(--text-3)] pt-1 font-semibold leading-relaxed">
+          <div className="mt-2 text-xs text-muted-foreground font-medium">
             Đã chi <span className="text-emerald-500 dark:text-emerald-400 font-bold">{budgetSpentPct.toFixed(1)}%</span> ngân sách ({monthlyBudgetGoal.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ)
           </div>
         </div>
 
         {/* Card 2: CRM conversions count */}
-        <div className="bg-[var(--bg-card)] p-5 rounded-[var(--radius)] border border-[var(--border)] shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">
+        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <span>Đơn hàng crm (Thực tế)</span>
-            <Target className="w-4 h-4 text-emerald-500" />
+            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Target className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2.5xl font-black text-emerald-500 dark:text-emerald-400 tracking-tight leading-none pt-1">
+          <div className="mt-4 text-2.5xl font-extrabold text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
             {totalCRMConvsSuccess} đơn
           </div>
-          <div className="text-[10px] text-[var(--text-3)] pt-1 font-semibold leading-relaxed">
-            Google báo cáo: <span className="font-bold text-[var(--text-2)]">{Math.round(totalGoogleConvs)} đơn</span>
+          <div className="mt-2 text-xs text-muted-foreground font-medium">
+            Google báo cáo: <span className="font-bold text-foreground">{Math.round(totalGoogleConvs)} đơn</span>
           </div>
         </div>
 
         {/* Card 3: CPA vs ROAS */}
-        <div className="bg-[var(--bg-card)] p-5 rounded-[var(--radius)] border border-[var(--border)] shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">
+        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <span>CPA / ROAS (CRM thực tế)</span>
-            <Activity className="w-4 h-4 text-amber-500" />
+            <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Activity className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2.5xl font-black text-[var(--text-1)] tracking-tight leading-none pt-1">
+          <div className="mt-4 text-2.5xl font-extrabold text-foreground tracking-tight leading-none">
             CPA {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
-          <div className="text-[10px] text-[var(--text-3)] pt-1 font-semibold leading-relaxed flex justify-between items-center">
-            <span>Dựa trên đơn thực tế đối soát</span>
-            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/25 font-bold">ROAS {roas.toFixed(2)}x</span>
+          <div className="mt-2 text-xs text-muted-foreground font-medium flex justify-between items-center w-full">
+            <span>Dựa trên đơn thực tế</span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-bold text-[10px]">ROAS {roas.toFixed(2)}x</span>
           </div>
         </div>
 
         {/* Card 4: Net profit */}
-        <div className="bg-[var(--bg-card)] p-5 rounded-[var(--radius)] border border-[var(--border)] shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">
+        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <span>Lợi nhuận nét dự tính</span>
-            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 animate-pulse">
+              <Sparkles className="w-4 h-4" />
+            </div>
           </div>
-          <div className={`text-2.5xl font-black tracking-tight leading-none pt-1 ${netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <div className={cn("mt-4 text-2.5xl font-extrabold tracking-tight leading-none", netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
             {netProfit >= 0 ? '+' : ''}{netProfit.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
-          <div className="text-[10px] text-[var(--text-3)] pt-1 font-semibold leading-relaxed">
-            Doanh thu CRM: <span className="font-bold text-[var(--text-2)]">{totalCRMRevenue.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ</span>
+          <div className="mt-2 text-xs text-muted-foreground font-medium">
+            Doanh thu CRM: <span className="font-bold text-foreground">{totalCRMRevenue.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ</span>
           </div>
         </div>
 
@@ -458,126 +466,130 @@ export default async function DashboardPage({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         
         {/* Grid A: Top Chiến Dịch Hiệu Quả Nhất */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[350px]">
+        <div className="bg-card text-card-foreground border border-border rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[380px]">
           <div>
-            <div className="p-4 bg-[var(--bg-secondary)] border-b border-[var(--border)] flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[var(--text-1)] uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-4 bg-muted/40 border-b border-border flex justify-between items-center">
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 🏆 Top Chiến Dịch Hiệu Quả Nhất
               </h2>
-              <span className="text-[9px] text-[var(--text-3)] font-semibold">Đơn hàng nhiều nhất</span>
+              <span className="text-[10px] text-muted-foreground font-semibold">Đơn hàng nhiều nhất</span>
             </div>
             
             {topEfficientCampaigns.length === 0 ? (
-              <div className="py-20 text-center text-[var(--text-3)] text-xs font-medium">
+              <div className="py-20 text-center text-muted-foreground text-xs font-medium">
                 Không tìm thấy chiến dịch nào có đơn thực tế trong ngày {showDateStr}
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[var(--bg-secondary)]/35 border-b border-[var(--border)] text-[var(--text-3)] font-bold">
-                  <tr>
-                    <th className="p-3.5">Chiến dịch</th>
-                    <th className="p-3.5 text-right">Chi tiêu</th>
-                    <th className="p-3.5 text-center">CRM Đơn</th>
-                    <th className="p-3.5 text-right">Doanh thu</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]/60">
-                  {topEfficientCampaigns.map(c => (
-                    <tr key={c.id} className="hover:bg-[var(--bg-secondary)]/35 transition">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[var(--text-1)] text-xs flex items-center gap-1.5">
-                          <span className="truncate max-w-[150px]" title={c.name}>{c.name}</span>
-                          <span className={cn(
-                            "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
-                            c.status === 'ENABLED' 
-                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                              : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                          )}>
-                            {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-[var(--text-3)] font-mono mt-0.5">ID: {c.id}</div>
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-[var(--text-2)]">
-                        {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md font-extrabold font-mono">
-                          {c.convs}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-emerald-500">
-                        {c.rev.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-muted/20 border-b border-border text-muted-foreground font-bold">
+                    <tr>
+                      <th className="p-3.5 pl-5">Chiến dịch</th>
+                      <th className="p-3.5 text-right">Chi tiêu</th>
+                      <th className="p-3.5 text-center">CRM Đơn</th>
+                      <th className="p-3.5 text-right pr-5">Doanh thu</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {topEfficientCampaigns.map(c => (
+                      <tr key={c.id} className="hover:bg-muted/10 transition duration-150">
+                        <td className="p-3.5 pl-5">
+                          <div className="font-bold text-foreground text-xs flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate max-w-[150px]" title={c.name}>{c.name}</span>
+                            <span className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
+                              c.status === 'ENABLED' 
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                            )}>
+                              {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-mono mt-0.5">ID: {c.id}</div>
+                        </td>
+                        <td className="p-3.5 text-right font-mono text-foreground font-medium">
+                          {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-md font-extrabold font-mono text-[10px]">
+                            {c.convs}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right font-mono font-bold text-emerald-500 pr-5">
+                          {c.rev.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
 
         {/* Grid B: Top Chiến Dịch Lãng Phí (Cảnh báo) */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[350px]">
+        <div className="bg-card text-card-foreground border border-border rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[380px]">
           <div>
-            <div className="p-4 bg-[var(--bg-secondary)] border-b border-[var(--border)] flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[var(--text-1)] uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-4 bg-muted/40 border-b border-border flex justify-between items-center">
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
                 ⚠️ Top Chiến Dịch Lãng Phí (Cảnh báo)
               </h2>
-              <span className="text-[9px] text-rose-500 font-bold uppercase tracking-wider">Tiêu tiền 0 đơn CRM</span>
+              <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Tiêu tiền 0 đơn CRM</span>
             </div>
             
             {topWasteCampaigns.length === 0 ? (
-              <div className="py-20 text-center text-[var(--text-3)] text-xs font-medium">
+              <div className="py-20 text-center text-muted-foreground text-xs font-medium">
                 Chúc mừng! Không có chiến dịch lãng phí tiền cắn 0 đơn trong ngày {showDateStr}
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[var(--bg-secondary)]/35 border-b border-[var(--border)] text-[var(--text-3)] font-bold">
-                  <tr>
-                    <th className="p-3.5">Chiến dịch</th>
-                    <th className="p-3.5 text-right">Chi tiêu</th>
-                    <th className="p-3.5 text-center">Đơn hàng</th>
-                    <th className="p-3.5 text-center">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]/60 font-medium">
-                  {topWasteCampaigns.map(c => (
-                    <tr key={c.id} className="hover:bg-[var(--bg-secondary)]/35 transition">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[var(--text-1)] text-xs flex items-center gap-1.5">
-                          <span className="truncate max-w-[150px]" title={c.name}>{c.name}</span>
-                          <span className={cn(
-                            "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
-                            c.status === 'ENABLED' 
-                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                              : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                          )}>
-                            {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-[var(--text-3)] font-mono mt-0.5">ID: {c.id}</div>
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-rose-500 font-bold">
-                        {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                      </td>
-                      <td className="p-3.5 text-center text-[var(--text-3)] font-mono font-semibold">
-                        0.0
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <Link 
-                          href={`/campaigns?id=${c.id}`}
-                          className="px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border)] hover:border-rose-500 hover:text-rose-500 rounded text-[10px] font-bold tracking-tight text-[var(--text-2)] transition duration-150"
-                        >
-                          XEM CHI TIẾT
-                        </Link>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-muted/20 border-b border-border text-muted-foreground font-bold">
+                    <tr>
+                      <th className="p-3.5 pl-5">Chiến dịch</th>
+                      <th className="p-3.5 text-right">Chi tiêu</th>
+                      <th className="p-3.5 text-center">Đơn hàng</th>
+                      <th className="p-3.5 text-center pr-5">Hành động</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/60 font-medium">
+                    {topWasteCampaigns.map(c => (
+                      <tr key={c.id} className="hover:bg-muted/10 transition duration-150">
+                        <td className="p-3.5 pl-5">
+                          <div className="font-bold text-foreground text-xs flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate max-w-[150px]" title={c.name}>{c.name}</span>
+                            <span className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
+                              c.status === 'ENABLED' 
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                            )}>
+                              {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-mono mt-0.5">ID: {c.id}</div>
+                        </td>
+                        <td className="p-3.5 text-right font-mono text-rose-500 font-bold">
+                          {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                        </td>
+                        <td className="p-3.5 text-center text-muted-foreground font-mono font-semibold">
+                          0
+                        </td>
+                        <td className="p-3.5 text-center pr-5">
+                          <Link 
+                            href={`/campaigns?id=${c.id}`}
+                            className="inline-flex items-center justify-center px-3 py-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-rose-500 hover:text-rose-500 rounded-md text-[10px] font-bold tracking-tight transition duration-150"
+                          >
+                            XEM CHI TIẾT
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
@@ -586,98 +598,102 @@ export default async function DashboardPage({
 
       {/* Grid C: Top Chiến Dịch CPA Cao (Cảnh báo) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-        <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[350px]">
+        <div className="lg:col-span-2 bg-card text-card-foreground border border-border rounded-[var(--radius)] overflow-hidden shadow-sm flex flex-col justify-between min-h-[380px]">
           <div>
-            <div className="p-4 bg-[var(--bg-secondary)] border-b border-[var(--border)] flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[var(--text-1)] uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-4 bg-muted/40 border-b border-border flex justify-between items-center">
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                 🚨 Top Chiến Dịch CPA cao (Cảnh báo)
               </h2>
-              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">Tiêu tiền CPA cực cao</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">Tiêu tiền CPA cực cao</span>
             </div>
             
             {topHighCpaCampaigns.length === 0 ? (
-              <div className="py-20 text-center text-[var(--text-3)] text-xs font-medium">
+              <div className="py-20 text-center text-muted-foreground text-xs font-medium">
                 Không ghi nhận chiến dịch kém hiệu quả / CPA cao trong ngày {showDateStr}
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[var(--bg-secondary)]/35 border-b border-[var(--border)] text-[var(--text-3)] font-bold">
-                  <tr>
-                    <th className="p-3.5">Chiến dịch</th>
-                    <th className="p-3.5 text-right">Chi tiêu</th>
-                    <th className="p-3.5 text-center">CPA / CRM Đơn</th>
-                    <th className="p-3.5 text-center">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]/60 font-medium">
-                  {topHighCpaCampaigns.map(c => (
-                    <tr key={c.id} className="hover:bg-[var(--bg-secondary)]/35 transition">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[var(--text-1)] text-xs flex items-center gap-1.5">
-                          <span className="truncate max-w-[200px]" title={c.name}>{c.name}</span>
-                          <span className={cn(
-                            "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
-                            c.status === 'ENABLED' 
-                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                              : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                          )}>
-                            {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-[var(--text-3)] font-mono mt-0.5">ID: {c.id}</div>
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-rose-500 font-bold">
-                        {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-                      </td>
-                      <td className="p-3.5 text-center font-mono font-bold text-[var(--text-1)]">
-                        {c.cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ <span className="text-[10px] text-[var(--text-3)] font-medium">({c.convs} đơn)</span>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <Link 
-                          href={`/campaigns?id=${c.id}`}
-                          className="px-2.5 py-1 bg-[var(--bg-secondary)] border border-[var(--border)] hover:border-amber-500 hover:text-amber-500 rounded text-[10px] font-bold tracking-tight text-[var(--text-2)] transition duration-150"
-                        >
-                          XEM CHI TIẾT
-                        </Link>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-muted/20 border-b border-border text-muted-foreground font-bold">
+                    <tr>
+                      <th className="p-3.5 pl-5">Chiến dịch</th>
+                      <th className="p-3.5 text-right">Chi tiêu</th>
+                      <th className="p-3.5 text-center">CPA / CRM Đơn</th>
+                      <th className="p-3.5 text-center pr-5">Hành động</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/60 font-medium">
+                    {topHighCpaCampaigns.map(c => (
+                      <tr key={c.id} className="hover:bg-muted/10 transition duration-150">
+                        <td className="p-3.5 pl-5">
+                          <div className="font-bold text-foreground text-xs flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate max-w-[200px]" title={c.name}>{c.name}</span>
+                            <span className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
+                              c.status === 'ENABLED' 
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                            )}>
+                              {c.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-mono mt-0.5">ID: {c.id}</div>
+                        </td>
+                        <td className="p-3.5 text-right font-mono text-rose-500 font-bold">
+                          {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                        </td>
+                        <td className="p-3.5 text-center font-mono font-bold text-foreground">
+                          {c.cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ <span className="text-[10px] text-muted-foreground font-medium">({c.convs} đơn)</span>
+                        </td>
+                        <td className="p-3.5 text-center pr-5">
+                          <Link 
+                            href={`/campaigns?id=${c.id}`}
+                            className="inline-flex items-center justify-center px-3 py-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-amber-500 hover:text-amber-500 rounded-md text-[10px] font-bold tracking-tight transition duration-150"
+                          >
+                            XEM CHI TIẾT
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
 
         {/* Small Google Ads details widget */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] p-5 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-[var(--text-1)] uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-emerald-500 animate-pulse" />
-              Tài khoản liên kết ({accounts.length})
-            </h3>
-            <p className="text-[11px] text-[var(--text-3)] mt-0.5">
-              Các tài khoản Google Ads đang đối soát POS Pancake CRM.
-            </p>
-          </div>
+        <div className="bg-card text-card-foreground border border-border rounded-[var(--radius)] p-6 shadow-sm flex flex-col justify-between">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-emerald-500 animate-pulse" />
+                Tài khoản liên kết ({accounts.length})
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                Các tài khoản Google Ads đang đối soát POS Pancake CRM.
+              </p>
+            </div>
 
-          <div className="space-y-2.5">
-            {accounts.map(acc => (
-              <div key={acc.id} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[calc(var(--radius)*0.8)] flex items-center justify-between shadow-sm">
-                <div>
-                  <h4 className="text-xs font-bold text-[var(--text-1)]">{acc.name || "Không rõ tên"}</h4>
-                  <span className="text-[9px] text-[var(--text-3)] font-mono font-medium">{acc.customerId}</span>
+            <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+              {accounts.map(acc => (
+                <div key={acc.id} className="p-3 bg-muted/30 border border-border rounded-[calc(var(--radius)*0.8)] flex items-center justify-between shadow-sm">
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">{acc.name || "Không rõ tên"}</h4>
+                    <span className="text-[9px] text-muted-foreground font-mono font-medium">{acc.customerId}</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold border bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    Hoạt động
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold border bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                  Hoạt động
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           <Link 
             href="/connections" 
-            className="w-full py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--primary)] text-xs font-bold rounded-lg text-center block text-[var(--text-2)] transition"
+            className="w-full mt-4 py-2.5 bg-muted hover:bg-muted/80 border border-border hover:border-primary text-xs font-bold rounded-lg text-center block text-foreground transition duration-150"
           >
             Quản lý Kết nối
           </Link>

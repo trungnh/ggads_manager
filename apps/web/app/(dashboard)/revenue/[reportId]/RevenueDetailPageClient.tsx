@@ -53,6 +53,16 @@ export default function RevenueDetailPageClient({
   initialDailyData 
 }: RevenueDetailPageClientProps) {
   
+  React.useEffect(() => {
+    if (initialReport?.name && typeof window !== 'undefined') {
+      if (!(window as any).__dynamicRouteLabels) {
+        (window as any).__dynamicRouteLabels = {};
+      }
+      (window as any).__dynamicRouteLabels[initialReport.id] = initialReport.name;
+      window.dispatchEvent(new CustomEvent('dynamic-route-labels-updated'));
+    }
+  }, [initialReport]);
+
   // 1. Rates Configuration State
   const ratesConfig = initialReport.rates || {};
   const [importPrice, setImportPrice] = React.useState(String(ratesConfig.importPrice ?? 0));

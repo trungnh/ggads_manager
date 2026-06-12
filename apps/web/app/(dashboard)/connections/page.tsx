@@ -29,7 +29,7 @@ export default async function ConnectionsPage() {
     .orderBy(aiConnections.createdAt);
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="p-6">
       <ConnectionsPageClient 
         initialConnections={connections} 
         initialTelegramConnections={telegramConns}

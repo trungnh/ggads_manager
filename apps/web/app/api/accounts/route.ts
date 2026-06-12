@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db, userAdsAccounts, adsAccounts } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 export async function GET() {
   const session = await auth();
@@ -23,9 +23,9 @@ export async function GET() {
     .innerJoin(userAdsAccounts, eq(userAdsAccounts.adsAccountId, adsAccounts.id))
     .where(eq(userAdsAccounts.userId, session.user.id));
 
-    // Fallback: If no accounts linked to user, return all ACTIVE accounts (for debugging)
+    // Fallback: If no accounts linked to user, return all ACTIVE/ENABLED accounts (for debugging)
     if (accounts.length === 0) {
-      console.log(`[API_ACCOUNTS] No accounts linked to user, returning all active accounts as fallback.`);
+      console.log(`[API_ACCOUNTS] No accounts linked to user, returning all active/enabled accounts as fallback.`);
       accounts = await db.select({
         id: adsAccounts.id,
         name: adsAccounts.name,
@@ -33,7 +33,7 @@ export async function GET() {
         status: adsAccounts.status
       })
       .from(adsAccounts)
-      .where(eq(adsAccounts.status, 'ACTIVE'));
+      .where(inArray(adsAccounts.status, ['ACTIVE', 'ENABLED']));
     }
 
     return NextResponse.json({ accounts });

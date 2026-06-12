@@ -1,7 +1,7 @@
 'use client'
 
 import { X, Check, Sun, Moon, Maximize2, Minimize2 } from 'lucide-react'
-import { useThemeCustomizer } from '@/components/providers/ThemeProviderCustomizer'
+import { useThemeCustomizer, ThemePreset, AccentColor } from '@/components/providers/ThemeProviderCustomizer'
 import { useEffect, useState } from 'react'
 
 interface ThemeCustomizerProps {
@@ -13,6 +13,8 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
   const {
     themePreset,
     setThemePreset,
+    accentColor,
+    setAccentColor,
     radius,
     setRadius,
     contentWidth,
@@ -40,18 +42,26 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
 
   if (!isOpen) return null
 
-  const PRESETS = [
-    { id: 'neutral', name: 'Neutral (Slate)', color: 'bg-slate-500' },
-    { id: 'tangerine', name: 'Tangerine (Quất)', color: 'bg-orange-500' },
-    { id: 'brutalist', name: 'Brutalist (Stark)', color: 'bg-black dark:bg-white' },
-    { id: 'softpop', name: 'Soft Pop (Teal)', color: 'bg-teal-500' }
+  const BASE_PRESETS = [
+    { id: 'zinc', name: 'Zinc (Xám chì)', color: 'bg-zinc-500' },
+    { id: 'slate', name: 'Slate (Xám đá)', color: 'bg-slate-500' },
+    { id: 'stone', name: 'Stone (Xám cuội)', color: 'bg-stone-500' },
+    { id: 'neutral', name: 'Neutral (Trung tính)', color: 'bg-neutral-400' }
+  ] as const
+
+  const ACCENT_COLORS = [
+    { id: 'default', name: 'Mặc định', color: 'bg-foreground border border-border' },
+    { id: 'blue', name: 'Xanh dương', color: 'bg-blue-500' },
+    { id: 'green', name: 'Xanh lá', color: 'bg-emerald-500' },
+    { id: 'orange', name: 'Cam', color: 'bg-orange-500' },
+    { id: 'red', name: 'Đỏ', color: 'bg-red-500' }
   ] as const
 
   const RADII = [
-    { value: '0px', label: '0px (Sharp)' },
-    { value: '8px', label: '8px (Modern)' },
-    { value: '12px', label: '12px (Premium)' },
-    { value: '16px', label: '16px (Soft)' }
+    { value: '0px', label: '0px (Sắc cạnh)' },
+    { value: '4px', label: '4px (Hiện đại)' },
+    { value: '8px', label: '8px (Bo vừa)' },
+    { value: '12px', label: '12px (Bo tròn)' }
   ]
 
   return (
@@ -60,32 +70,32 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Sliding Drawer */}
-      <div className="absolute right-0 top-0 bottom-0 w-80 bg-[var(--bg-card)] border-l border-[var(--border)] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+      <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
         
         {/* Header */}
-        <div className="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-card)] shrink-0">
+        <div className="p-5 border-b border-border flex justify-between items-center bg-card shrink-0">
           <div className="space-y-0.5">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-1)]">Tùy biến giao diện</h2>
-            <p className="text-[10px] text-[var(--text-3)] font-medium">Thiết kế không gian làm việc của bạn</p>
+            <h2 className="text-sm font-bold tracking-tight text-foreground">Cấu hình giao diện</h2>
+            <p className="text-[10px] text-muted-foreground font-medium">Tùy biến không gian làm việc của bạn</p>
           </div>
-          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors cursor-pointer">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer border-0 bg-transparent p-1 rounded-md">
             <X size={18} />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-7">
+        <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin">
           
           {/* Section: Light/Dark Mode */}
-          <div className="space-y-3">
-            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--text-2)]">Chế độ hiển thị</h3>
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Chế độ hiển thị</h3>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => toggleThemeMode('light')}
-                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
                   themeMode === 'light'
-                    ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                    : 'border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                    ? 'border-primary bg-secondary text-foreground shadow-sm'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40'
                 }`}
               >
                 <Sun size={14} className="text-amber-500" />
@@ -93,10 +103,10 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
               </button>
               <button
                 onClick={() => toggleThemeMode('dark')}
-                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
                   themeMode === 'dark'
-                    ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                    : 'border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                    ? 'border-primary bg-secondary text-foreground shadow-sm'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary/40'
                 }`}
               >
                 <Moon size={14} className="text-sky-400" />
@@ -105,27 +115,48 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
             </div>
           </div>
 
-          {/* Section: Color Presets */}
-          <div className="space-y-3">
-            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--text-2)]">Bộ màu sắc (Color Presets)</h3>
-            <div className="space-y-2">
-              {PRESETS.map(preset => {
+          {/* Section: Base Preset Themes */}
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Chủ đề nền (Base theme)</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {BASE_PRESETS.map(preset => {
                 const isActive = themePreset === preset.id
                 return (
                   <button
                     key={preset.id}
                     onClick={() => setThemePreset(preset.id)}
-                    className={`w-full p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-lg border flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
                       isActive
-                        ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                        : 'border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-1)]'
+                        ? 'border-primary bg-secondary text-foreground shadow-sm'
+                        : 'border-border text-muted-foreground hover:bg-secondary/30 hover:text-foreground'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-4 h-4 rounded-full shrink-0 shadow-sm ${preset.color}`} />
-                      <span className="truncate">{preset.name}</span>
-                    </div>
-                    {isActive && <Check size={14} className="text-primary shrink-0" />}
+                    <div className={`w-3.5 h-3.5 rounded-full shrink-0 shadow-sm ${preset.color}`} />
+                    <span className="truncate">{preset.name.split(' ')[0]}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Section: Accent Colors */}
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Màu điểm nhấn (Accent color)</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {ACCENT_COLORS.map(color => {
+                const isActive = accentColor === color.id
+                return (
+                  <button
+                    key={color.id}
+                    onClick={() => setAccentColor(color.id)}
+                    className={`p-2.5 rounded-lg border flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
+                      isActive
+                        ? 'border-primary bg-secondary text-foreground shadow-sm'
+                        : 'border-border text-muted-foreground hover:bg-secondary/30 hover:text-foreground'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full shrink-0 shadow-sm ${color.color}`} />
+                    <span className="truncate">{color.name}</span>
                   </button>
                 )
               })}
@@ -133,8 +164,8 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
           </div>
 
           {/* Section: Radius Bo góc */}
-          <div className="space-y-3">
-            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--text-2)]">Độ bo góc (Radius)</h3>
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Độ bo góc (Radius)</h3>
             <div className="grid grid-cols-2 gap-2">
               {RADII.map(item => {
                 const isActive = radius === item.value
@@ -142,10 +173,10 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
                   <button
                     key={item.value}
                     onClick={() => setRadius(item.value)}
-                    className={`py-2 px-2.5 rounded-lg border text-center text-[10px] font-extrabold transition-all cursor-pointer ${
+                    className={`py-2 px-2.5 rounded-lg border text-center text-[10px] font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                        : 'border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                        ? 'border-primary bg-secondary text-foreground shadow-sm'
+                        : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary/30'
                     }`}
                   >
                     {item.label}
@@ -156,15 +187,15 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
           </div>
 
           {/* Section: Content Width Khung chứa */}
-          <div className="space-y-3">
-            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--text-2)]">Khung nội dung (Layout Width)</h3>
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Khung nội dung (Layout Width)</h3>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setContentWidth('compact')}
-                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-extrabold transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border flex items-center justify-center gap-2 text-[10px] font-bold transition-all cursor-pointer ${
                   contentWidth === 'compact'
-                    ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                    : 'border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                    ? 'border-primary bg-secondary text-foreground shadow-sm'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary/30'
                 }`}
               >
                 <Minimize2 size={13} />
@@ -172,10 +203,10 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
               </button>
               <button
                 onClick={() => setContentWidth('wide')}
-                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-extrabold transition-all cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border flex items-center justify-center gap-2 text-[10px] font-bold transition-all cursor-pointer ${
                   contentWidth === 'wide'
-                    ? 'border-primary bg-[var(--bg-secondary)] text-[var(--text-1)] shadow-sm'
-                    : 'border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                    ? 'border-primary bg-secondary text-foreground shadow-sm'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary/30'
                 }`}
               >
                 <Maximize2 size={13} />
@@ -187,7 +218,7 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
         </div>
 
         {/* Footer info */}
-        <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] text-center text-[9px] text-[var(--text-3)] font-semibold shrink-0 uppercase tracking-widest">
+        <div className="p-4 border-t border-border bg-secondary/30 text-center text-[9px] text-muted-foreground font-semibold shrink-0 uppercase tracking-widest">
           NNHD Ads Manager v1.0 • Built with AI
         </div>
 

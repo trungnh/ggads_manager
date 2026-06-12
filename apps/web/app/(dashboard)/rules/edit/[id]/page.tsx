@@ -127,6 +127,19 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
     fetchRule()
   }, [id, router])
 
+  // Update dynamic route label for Topnav breadcrumbs
+  useEffect(() => {
+    if (name) {
+      if (typeof window !== 'undefined') {
+        if (!(window as any).__dynamicRouteLabels) {
+          (window as any).__dynamicRouteLabels = {}
+        }
+        (window as any).__dynamicRouteLabels[id] = name
+        window.dispatchEvent(new CustomEvent('dynamic-route-labels-updated'))
+      }
+    }
+  }, [id, name])
+
   // --- Fetch Supporting Data ---
   useEffect(() => {
     fetch('/api/accounts')
@@ -272,7 +285,11 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
               <Label className="text-[var(--text-2)]">Tài khoản Google Ads áp dụng</Label>
               <Select value={adsAccountId} onValueChange={setAdsAccountId}>
                 <SelectTrigger className="rounded-[calc(var(--radius)*0.8)] border-[var(--border)] text-[var(--text-1)] bg-[var(--bg-card)]">
-                  <SelectValue placeholder="Chọn tài khoản..." />
+                  <SelectValue placeholder="Chọn tài khoản...">
+                    {adsAccounts.find(acc => acc.id === adsAccountId)
+                      ? `${adsAccounts.find(acc => acc.id === adsAccountId).name} (${adsAccounts.find(acc => acc.id === adsAccountId).customerId})`
+                      : (adsAccountId ? 'Đang tải tài khoản...' : 'Chọn tài khoản...')}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {adsAccounts.map(acc => (

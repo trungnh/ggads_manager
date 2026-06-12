@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import ScheduleModal from './ScheduleModal'
+import { cn } from "@/lib/utils"
 
 type Schedule = {
   id: string
@@ -90,18 +91,18 @@ export default function ScheduleListClient({ initialSchedules, accounts }: { ini
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius)] border border-[var(--border)] shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-6 rounded-[var(--radius)] border border-border shadow-sm">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--text-1)]">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
             Dayparting (Lịch trình Chiến dịch)
           </h1>
-          <p className="text-sm text-[var(--text-3)]">
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
             Tự động bật/tắt hoặc điều chỉnh ngân sách theo khung giờ cố định.
           </p>
         </div>
         <Button 
           onClick={() => { setEditingSchedule(null); setIsModalOpen(true); }}
-          className="h-10 px-5 rounded-[calc(var(--radius)*0.8)] gap-2 flex items-center cursor-pointer shadow-sm border-0"
+          className="h-9 px-5 rounded-[calc(var(--radius)*0.8)] gap-2 flex items-center cursor-pointer shadow-sm border-0 bg-primary text-primary-foreground hover:bg-primary/95 transition duration-150 text-xs font-bold"
         >
           <Plus size={16} />
           Tạo lịch trình
@@ -109,60 +110,66 @@ export default function ScheduleListClient({ initialSchedules, accounts }: { ini
       </div>
 
       {/* Table Container */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-[var(--radius)] shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40 border-b border-border">
             <TableRow>
-              <TableHead>Tài khoản</TableHead>
-              <TableHead>Tên lịch trình</TableHead>
-              <TableHead>Thời gian</TableHead>
-              <TableHead>Hành động</TableHead>
-              <TableHead>Chiến dịch</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Tuỳ chọn</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Tài khoản</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Tên lịch trình</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Thời gian</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Hành động</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Chiến dịch</TableHead>
+              <TableHead className="font-bold text-xs text-muted-foreground">Trạng thái</TableHead>
+              <TableHead className="text-right font-bold text-xs text-muted-foreground">Tuỳ chọn</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="divide-y divide-border/60">
             {schedules.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-[var(--text-3)] italic text-xs">
+                <TableCell colSpan={7} className="text-center py-16 text-muted-foreground italic text-xs">
                   Chưa có lịch trình nào.
                 </TableCell>
               </TableRow>
             ) : schedules.map(schedule => (
-              <TableRow key={schedule.id}>
-                <TableCell className="font-semibold text-xs text-[var(--text-2)] truncate max-w-[180px]">
+              <TableRow key={schedule.id} className="hover:bg-muted/10 transition duration-150">
+                <TableCell className="font-semibold text-xs text-muted-foreground truncate max-w-[180px] py-4">
                   {accounts.find(a => a.id === schedule.adsAccountId)?.name || schedule.adsAccountId}
                 </TableCell>
-                <TableCell className="font-bold text-xs text-[var(--text-1)]">{schedule.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="font-mono text-[10px] tracking-tight rounded-[calc(var(--radius)*0.6)] border-[var(--border)] bg-[var(--bg-secondary)]">
+                <TableCell className="font-bold text-xs text-foreground py-4">{schedule.name}</TableCell>
+                <TableCell className="py-4">
+                  <Badge variant="outline" className="font-mono text-[10px] tracking-tight rounded-full border-border bg-background px-2 py-0.5">
                     {schedule.executionTime}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-[calc(var(--radius)*0.4)] bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <TableCell className="py-4">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                     {ACTION_LABELS[schedule.actionType] || schedule.actionType}
                     {schedule.budgetValue && ` (${schedule.budgetValue}${schedule.budgetIsPercentage ? '%' : 'đ'})`}
                   </span>
                 </TableCell>
-                <TableCell className="text-xs font-semibold text-[var(--text-2)]">
+                <TableCell className="text-xs font-semibold text-muted-foreground py-4">
                   {schedule.campaignIds.length} chiến dịch
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-4">
                   <button 
                     onClick={() => handleToggleStatus(schedule)}
-                    className={`w-9 h-5 rounded-full relative transition-colors cursor-pointer border-0 ${schedule.status === 'active' ? 'bg-emerald-600' : 'bg-[var(--border)]'}`}
+                    className={cn(
+                      "w-9 h-5 rounded-full relative transition-colors cursor-pointer border-none outline-none",
+                      schedule.status === 'active' ? 'bg-emerald-500' : 'bg-muted-foreground/30'
+                    )}
                   >
-                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-all ${schedule.status === 'active' ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <span className={cn(
+                      "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all",
+                      schedule.status === 'active' ? 'translate-x-4' : 'translate-x-0'
+                    )} />
                   </button>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right py-4 pr-5">
                   <div className="flex gap-1.5 justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[calc(var(--radius)*0.6)] text-[var(--text-2)] hover:bg-[var(--bg-secondary)]" onClick={() => { setEditingSchedule(schedule); setIsModalOpen(true); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[calc(var(--radius)*0.6)] text-muted-foreground hover:bg-muted transition duration-150" onClick={() => { setEditingSchedule(schedule); setIsModalOpen(true); }}>
                       <Edit size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[calc(var(--radius)*0.6)] text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={() => handleDelete(schedule.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[calc(var(--radius)*0.6)] text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition duration-150" onClick={() => handleDelete(schedule.id)}>
                       <Trash2 size={14} />
                     </Button>
                   </div>

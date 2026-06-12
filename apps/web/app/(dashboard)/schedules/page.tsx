@@ -23,10 +23,10 @@ export default async function SchedulesPage() {
   if (accountsData.length === 0) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-1)] mb-2">Bảng điều khiển lịch trình</h1>
-        <p className="text-sm text-[var(--text-3)] mb-6">Giám sát và quản lý toàn bộ lịch hoạt động của chiến dịch, quy tắc và báo cáo tự động.</p>
-        <div className="p-12 text-center bg-[var(--bg-card)] rounded-[var(--radius)] border border-[var(--border)]">
-          <p className="text-sm text-[var(--text-3)] italic">Không tìm thấy tài khoản quảng cáo liên kết. Vui lòng kết nối tài khoản quảng cáo trước.</p>
+        <h1 className="text-xl font-bold tracking-tight text-foreground mb-2">Bảng điều khiển lịch trình</h1>
+        <p className="text-xs text-muted-foreground mb-6">Giám sát và quản lý toàn bộ lịch hoạt động của chiến dịch, quy tắc và báo cáo tự động.</p>
+        <div className="p-12 text-center bg-card rounded-[var(--radius)] border border-border">
+          <p className="text-sm text-muted-foreground italic">Không tìm thấy tài khoản quảng cáo liên kết. Vui lòng kết nối tài khoản quảng cáo trước.</p>
         </div>
       </div>
     );

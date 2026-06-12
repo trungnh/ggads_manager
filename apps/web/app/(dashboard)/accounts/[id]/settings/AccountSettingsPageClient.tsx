@@ -49,6 +49,17 @@ export default function AccountSettingsPageClient() {
         const json = await res.json()
         setData(json)
         setShowPaused(json.showPausedByDefault)
+
+        // Register dynamic route label
+        if (typeof window !== 'undefined') {
+          if (!(window as any).__dynamicRouteLabels) {
+            (window as any).__dynamicRouteLabels = {}
+          }
+          if (json.account?.name) {
+            (window as any).__dynamicRouteLabels[id as string] = json.account.name
+            window.dispatchEvent(new CustomEvent('dynamic-route-labels-updated'))
+          }
+        }
       }
     } catch (e) {
       console.error('Failed to fetch settings')
