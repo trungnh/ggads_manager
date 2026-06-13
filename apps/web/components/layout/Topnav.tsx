@@ -31,7 +31,7 @@ const ROUTE_LABELS: Record<string, string> = {
 export default function Topnav() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [dynamicLabels, setDynamicLabels] = useState<Record<string, string>>({})
@@ -54,6 +54,8 @@ export default function Topnav() {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
     if (savedTheme) {
       setTheme(savedTheme)
+    } else {
+      setTheme('light')
     }
   }, [])
 
