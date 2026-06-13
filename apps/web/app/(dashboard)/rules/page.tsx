@@ -53,7 +53,7 @@ export default async function RulesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10 animate-in fade-in duration-300">
       {/* --- Header --- */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-[var(--radius)] border border-border shadow-sm">
         <div className="flex items-center gap-4">
@@ -73,7 +73,7 @@ export default async function RulesPage() {
             </Button>
           </Link>
           <Link href="/rules/new">
-            <Button size="sm" className="gap-2 font-bold text-xs bg-primary text-primary-foreground hover:bg-primary/95 transition duration-150">
+            <Button size="sm" className="gap-2 font-bold text-xs bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 border-0 shadow-sm transition-all hover:scale-[1.02] cursor-pointer rounded-[calc(var(--radius)*0.8)]">
               <Plus className="w-4 h-4" /> Tạo Rule mới
             </Button>
           </Link>
@@ -92,7 +92,7 @@ export default async function RulesPage() {
               Bắt đầu bằng việc tạo một Rule để tự động hóa việc tắt camp khi lỗ hoặc tăng ngân sách khi lãi.
             </CardDescription>
             <Link href="/rules/new">
-              <Button className="rounded-[calc(var(--radius)*0.8)] text-xs font-bold bg-primary text-primary-foreground">Tạo Rule đầu tiên</Button>
+              <Button className="rounded-[calc(var(--radius)*0.8)] text-xs font-bold bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 border-0 shadow-sm transition-all hover:scale-[1.02] cursor-pointer">Tạo Rule đầu tiên</Button>
             </Link>
           </Card>
         ) : (
