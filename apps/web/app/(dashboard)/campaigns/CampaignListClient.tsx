@@ -108,6 +108,7 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
         // Also update local state for immediate feedback
         setCampaigns(prev => prev.map(c => {
           if (c.id === campaignId) {
+            if (type === 'status') return { ...c, status: value }
             if (type === 'is_excluded') return { ...c, isExcluded: value }
             if (type === 'cflc_reset') return { ...c, cfCost: '0' }
             if (type === 'cflc_override') return { ...c, cfCost: value.toString() }
@@ -117,9 +118,22 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
           }
           return c
         }))
+      } else {
+        const typeNames: Record<string, string> = {
+          status: 'trạng thái chiến dịch',
+          budget: 'ngân sách',
+          target_cpa: 'CPA mục tiêu',
+          is_excluded: 'cấu hình AUTO',
+          cflc_override: 'CFLC',
+          cflc_reset: 'reset CFLC'
+        }
+        const typeName = typeNames[type] || type
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || `Lỗi khi cập nhật ${typeName}`)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
+      alert(e.message || "Đã xảy ra lỗi kết nối")
     } finally {
       setUpdatingId(null)
       setEditingBudget(null)

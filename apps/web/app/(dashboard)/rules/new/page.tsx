@@ -547,7 +547,7 @@ function NewRulePageContent() {
                       className="w-[100px] rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-1)]" 
                       type="number" 
                       placeholder="VD: 20" 
-                      value={action.actionValue}
+                      value={action.actionValue || ""}
                       onChange={e => {
                         const newActions = [...actions]
                         newActions[idx].actionValue = e.target.value

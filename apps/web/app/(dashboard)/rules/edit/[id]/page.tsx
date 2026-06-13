@@ -102,13 +102,13 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
           conditionGroup: c.conditionGroup,
           metric: c.metric,
           operator: c.operator,
-          value: c.value
+          value: c.value || ''
         })))
         setActions(rule.actions.map((a: any) => ({
           actionType: a.actionType,
-          actionValue: a.actionValue,
-          alertMessage: a.alertMessage,
-          telegramConnectionId: a.telegramConnectionId
+          actionValue: a.actionValue || '',
+          alertMessage: a.alertMessage || '',
+          telegramConnectionId: a.telegramConnectionId || ''
         })))
         
         // Load Guardrails
@@ -610,7 +610,7 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
                       className="w-[100px] rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-1)]" 
                       type="number" 
                       placeholder="VD: 20" 
-                      value={action.actionValue}
+                      value={action.actionValue || ""}
                       onChange={e => {
                         const newActions = [...actions]
                         newActions[idx].actionValue = e.target.value
