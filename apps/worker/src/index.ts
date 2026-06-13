@@ -1,7 +1,7 @@
 import { Worker, Queue, Job } from 'bullmq';
 import Redis from 'ioredis';
-import { db, optimizationRules, campaignsSnapshot, adsAccounts, userAdsAccounts, telegramPerformanceReports, revenueReports, budgetOptimizations } from '@repo/db';
-import { CampaignSyncService, RulesEngine, ScheduleEngine, RevenueService, PlacementsAutoService, notificationQueue } from '@repo/services';
+import { db, optimizationRules, campaignsSnapshot, adsAccounts, userAdsAccounts, telegramPerformanceReports, revenueReports, budgetOptimizations, adsHealthAuditLogs } from '@repo/db';
+import { CampaignSyncService, RulesEngine, ScheduleEngine, RevenueService, PlacementsAutoService, notificationQueue, HealthAuditService } from '@repo/services';
 import { CampaignsService } from '@repo/google-ads';
 import { eq, and } from 'drizzle-orm';
 
@@ -185,6 +185,68 @@ const revenueWorker = new Worker('RevenueQueue', async (job: Job) => {
     }
   }
 }, { connection: redisConnection });
+
+// --- HEALTH AUDIT BACKGROUND WORKER ---
+export const healthAuditQueue = new Queue('HealthAuditQueue', { connection: redisConnection });
+
+const healthAuditWorker = new Worker('HealthAuditQueue', async (job: Job) => {
+  if (job.name === 'auto-run-health-audits') {
+    await runAutoHealthAudits();
+  }
+}, { connection: redisConnection });
+
+healthAuditWorker.on('failed', (job, err) => {
+  console.error(`[Health Audit Worker] Job ${job?.id} failed:`, err);
+});
+
+async function runAutoHealthAudits() {
+  console.log(`[Worker] Running Auto Health Audits Checker...`);
+  try {
+    const enabledAccounts = await db.query.adsAccounts.findMany({
+      where: eq(adsAccounts.healthAuditAutoEnabled, true)
+    });
+
+    if (enabledAccounts.length === 0) {
+      console.log(`[Worker] No accounts have Auto Health Audits enabled.`);
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+
+    for (const account of enabledAccounts) {
+      try {
+        let shouldRun = false;
+        
+        if (!account.healthAuditLastRun) {
+          shouldRun = true;
+        } else {
+          const lastRunDate = new Date(account.healthAuditLastRun);
+          const diffTime = Math.abs(now.getTime() - lastRunDate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          const freq = account.healthAuditCronFrequency || "WEEKLY";
+          if (freq === "DAILY" && diffDays >= 1) {
+            shouldRun = true;
+          } else if (freq === "WEEKLY" && diffDays >= 7) {
+            shouldRun = true;
+          } else if (freq === "MONTHLY" && diffDays >= 30) {
+            shouldRun = true;
+          }
+        }
+
+        if (shouldRun) {
+          console.log(`[Worker] Triggering Auto Audit for account ${account.customerId}...`);
+          await HealthAuditService.runAccountAudit(account.id, "AUTO");
+        }
+      } catch (err: any) {
+        console.error(`[Worker] Error running auto audit for account ${account.customerId}:`, err.message);
+      }
+    }
+  } catch (err: any) {
+    console.error(`[Worker] Error in runAutoHealthAudits:`, err.message);
+  }
+}
 
 async function checkAndSendPerformanceReports() {
   console.log(`[Worker] Checking for performance reports to send...`);
@@ -597,6 +659,14 @@ async function scheduleJobs() {
     }
   });
   console.log('[Worker] Scheduled Budget Safety Breaker checks job to run every 15 minutes.');
+
+  // Schedule Health Audits checks (Every 1 hour)
+  await healthAuditQueue.add('auto-run-health-audits', {}, {
+    repeat: {
+      pattern: '0 * * * *', // Every hour
+    }
+  });
+  console.log('[Worker] Scheduled health audits auto check to run every hour.');
 }
 
 scheduleJobs().catch(console.error);

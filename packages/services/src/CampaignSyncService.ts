@@ -422,6 +422,7 @@ export class CampaignSyncService {
       targetRoasBps: targetRoasBps,
       searchBudgetLostImpressionShare: searchBudgetLostImpressionShare || null,
       searchRankLostImpressionShare: searchRankLostImpressionShare || null,
+      primaryStatus: raw.campaign.primaryStatus || "ELIGIBLE",
     }).onConflictDoUpdate({
       target: [campaignsSnapshot.customerId, campaignsSnapshot.campaignId, campaignsSnapshot.date],
       set: {
@@ -450,6 +451,7 @@ export class CampaignSyncService {
         targetRoasBps: targetRoasBps,
         searchBudgetLostImpressionShare: searchBudgetLostImpressionShare || null,
         searchRankLostImpressionShare: searchRankLostImpressionShare || null,
+        primaryStatus: raw.campaign.primaryStatus || "ELIGIBLE",
       }
     });
   }

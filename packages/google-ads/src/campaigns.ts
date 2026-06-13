@@ -5,6 +5,7 @@ export interface CampaignRawData {
     id: string;
     name: string;
     status: string;
+    primaryStatus?: string;
     biddingStrategyType?: string;
   };
   campaignBudget: {
@@ -46,6 +47,7 @@ export class CampaignsService {
         campaign.id, 
         campaign.name, 
         campaign.status, 
+        campaign.primary_status,
         campaign.bidding_strategy_type,
         campaign_budget.resource_name,
         campaign_budget.amount_micros, 
@@ -128,6 +130,7 @@ export class CampaignsService {
         campaign.id, 
         campaign.name, 
         campaign.status, 
+        campaign.primary_status,
         campaign.bidding_strategy_type,
         campaign.maximize_conversions.target_cpa_micros,
         campaign.maximize_conversion_value.target_roas,

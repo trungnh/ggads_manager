@@ -21,7 +21,8 @@ import {
   Cpu,
   ChevronLeft,
   ChevronRight,
-  Radar
+  Radar,
+  Activity
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { useThemeCustomizer } from '@/components/providers/ThemeProviderCustomizer'
@@ -47,6 +48,7 @@ const NAV = [
   {
     section: 'AI Integration',
     items: [
+      { href: '/analyst',     icon: Activity,    label: 'AI Analyst' },
       { href: '/optimizer/placements', icon: Radar, label: 'Rada Diệt Kênh Rác'},
       { href: '/optimizer',   icon: TrendingUp,  label: 'Budget Optimizer'},
     ],

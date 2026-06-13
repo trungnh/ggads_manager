@@ -66,6 +66,11 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
   const [campaignSearch, setCampaignSearch] = useState('')
   const [enableMaxExecutions, setEnableMaxExecutions] = useState(true)
   
+  // Guardrails States
+  const [guardrailLearningProtection, setGuardrailLearningProtection] = useState(false)
+  const [guardrail3xKill, setGuardrail3xKill] = useState(false)
+  const [guardrailBudgetSuffocation, setGuardrailBudgetSuffocation] = useState(false)
+  
   const [conditions, setConditions] = useState<Condition[]>([])
   const [actions, setActions] = useState<Action[]>([])
 
@@ -106,6 +111,11 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
           telegramConnectionId: a.telegramConnectionId
         })))
         
+        // Load Guardrails
+        setGuardrailLearningProtection(rule.guardrailLearningProtection || false)
+        setGuardrail3xKill(rule.guardrail3xKill || false)
+        setGuardrailBudgetSuffocation(rule.guardrailBudgetSuffocation || false)
+
         if (rule.schedule) {
           setSchedule({
             hoursStart: rule.schedule.hoursStart || '08:00',
@@ -202,6 +212,9 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
           targetValue: targetType === 'specific' ? selectedCampaignIds : null,
           conditions,
           actions,
+          guardrailLearningProtection,
+          guardrail3xKill,
+          guardrailBudgetSuffocation,
           schedule: {
             ...schedule,
             maxExecutionsPerDay: enableMaxExecutions ? schedule.maxExecutionsPerDay : null
@@ -720,6 +733,54 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
                     </Button>
                   )
                 })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* --- Lớp bảo vệ (Guardrails) --- */}
+        <Card className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius)] shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg text-[var(--text-1)]">6. Lớp bảo vệ (Guardrails)</CardTitle>
+            <CardDescription className="text-[var(--text-3)]">Cấu hình bộ lọc an toàn để chủ động bảo vệ tài khoản khỏi lỗi kỹ thuật.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="flex items-start space-x-3 p-2 hover:bg-[var(--bg-secondary)]/30 rounded-[calc(var(--radius)*0.6)]">
+              <Checkbox 
+                id="learningProtection" 
+                checked={guardrailLearningProtection}
+                onCheckedChange={(checked) => setGuardrailLearningProtection(!!checked)}
+                className="mt-0.5 border-[var(--border)]"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="learningProtection" className="cursor-pointer font-semibold text-sm text-[var(--text-2)]">Bảo vệ giai đoạn máy học (Learning Phase Protection)</Label>
+                <p className="text-xs text-[var(--text-3)]">Tự động bỏ qua chiến dịch nếu đang trong giai đoạn máy học (LEARNING) từ Google Ads để tránh làm nhiễu thuật toán.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-2 hover:bg-[var(--bg-secondary)]/30 rounded-[calc(var(--radius)*0.6)]">
+              <Checkbox 
+                id="guardrail3xKill" 
+                checked={guardrail3xKill}
+                onCheckedChange={(checked) => setGuardrail3xKill(!!checked)}
+                className="mt-0.5 border-[var(--border)]"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="guardrail3xKill" className="cursor-pointer font-semibold text-sm text-[var(--text-2)]">Cầu chì an toàn 3x CPA (3x Kill Rule)</Label>
+                <p className="text-xs text-[var(--text-3)]">Tự động tạm dừng chiến dịch quảng cáo nếu chi phí CPA thực tế hôm nay vượt quá 3 lần CPA mục tiêu.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-2 hover:bg-[var(--bg-secondary)]/30 rounded-[calc(var(--radius)*0.6)]">
+              <Checkbox 
+                id="guardrailBudgetSuffocation" 
+                checked={guardrailBudgetSuffocation}
+                onCheckedChange={(checked) => setGuardrailBudgetSuffocation(!!checked)}
+                className="mt-0.5 border-[var(--border)]"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="guardrailBudgetSuffocation" className="cursor-pointer font-semibold text-sm text-[var(--text-2)]">Chống bóp nghẹt ngân sách (Budget Suffocation Warning)</Label>
+                <p className="text-xs text-[var(--text-3)]">Giới hạn không cho phép tự động giảm ngân sách ngày xuống dưới ngưỡng 5x CPA mục tiêu.</p>
               </div>
             </div>
           </CardContent>

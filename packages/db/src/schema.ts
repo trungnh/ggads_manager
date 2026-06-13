@@ -75,6 +75,9 @@ export const adsAccounts = pgTable("ads_accounts", {
   placementsAutoExcludeLastRun: date("placements_auto_exclude_last_run"),
   placementsCpaThreshold: integer("placements_cpa_threshold").default(250000),
   placementsScanFrequency: integer("placements_scan_frequency").default(15),
+  healthAuditAutoEnabled: boolean("health_audit_auto_enabled").default(false),
+  healthAuditCronFrequency: varchar("health_audit_cron_frequency", { length: 20 }).default("WEEKLY"),
+  healthAuditLastRun: date("health_audit_last_run"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -129,6 +132,7 @@ export const campaignsSnapshot = pgTable("campaigns_snapshot", {
   targetRoasBps: integer("target_roas_bps"),
   searchBudgetLostImpressionShare: numeric("search_budget_lost_impression_share", { precision: 5, scale: 4 }),
   searchRankLostImpressionShare: numeric("search_rank_lost_impression_share", { precision: 5, scale: 4 }),
+  primaryStatus: varchar("primary_status", { length: 50 }).default("ELIGIBLE"),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (t) => ({
   uniq: unique().on(t.customerId, t.campaignId, t.date),
@@ -193,6 +197,9 @@ export const optimizationRules = pgTable("optimization_rules", {
   lastExecutedAt: timestamp("last_executed_at"),
   executionsTodayCount: integer("executions_today_count").default(0),
   executionsTodayDate: date("executions_today_date"),
+  guardrailLearningProtection: boolean("guardrail_learning_protection").default(false),
+  guardrail3xKill: boolean("guardrail_3x_kill").default(false),
+  guardrailBudgetSuffocation: boolean("guardrail_budget_suffocation").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (t) => ({
@@ -554,6 +561,23 @@ export const budgetOptimizationSettingsRelations = relations(budgetOptimizationS
   user: one(users, {
     fields: [budgetOptimizationSettings.userId],
     references: [users.id],
+  }),
+}));
+
+// --- 3.22 adsHealthAuditLogs ---
+export const adsHealthAuditLogs = pgTable("ads_health_audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adsAccountId: uuid("ads_account_id").references(() => adsAccounts.id, { onDelete: "cascade" }).notNull(),
+  score: integer("score").notNull(),
+  resultJson: jsonb("result_json").notNull(),
+  triggerType: varchar("trigger_type", { length: 20 }).notNull(), // 'MANUAL' | 'AUTO'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const adsHealthAuditLogsRelations = relations(adsHealthAuditLogs, ({ one }) => ({
+  adsAccount: one(adsAccounts, {
+    fields: [adsHealthAuditLogs.adsAccountId],
+    references: [adsAccounts.id],
   }),
 }));
 

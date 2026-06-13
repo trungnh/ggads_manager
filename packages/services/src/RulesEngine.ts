@@ -15,6 +15,9 @@ export interface RuleWithDetails {
   executionsTodayDate?: string | null;
   executionsTodayCount?: number;
   lastExecutedAt?: string | null;
+  guardrailLearningProtection?: boolean;
+  guardrail3xKill?: boolean;
+  guardrailBudgetSuffocation?: boolean;
 }
 
 export class RulesEngine {
@@ -61,6 +64,38 @@ export class RulesEngine {
       });
 
       for (const snapshot of targetSnapshots) {
+        // Guardrail: Learning Phase Protection
+        if (rule.guardrailLearningProtection && snapshot.primaryStatus === 'LEARNING') {
+          console.log(`[RULE_ENGINE] Guardrail: Skip rule "${rule.name}" for campaign ${snapshot.name} due to active LEARNING phase.`);
+          continue;
+        }
+
+        // Guardrail: 3x Kill Rule
+        let is3xKillTriggered = false;
+        let killReason = "";
+        if (rule.guardrail3xKill) {
+          const targetCpa = Number(snapshot.targetCpaMicros || 0) / 1000000;
+          const cost = Number(snapshot.costMicros || 0) / 1000000;
+          const realConv = snapshot.realConversions || 0;
+          if (targetCpa > 0 && cost > 3 * targetCpa) {
+            const actualCpa = realConv > 0 ? cost / realConv : cost;
+            if (actualCpa > 3 * targetCpa) {
+              is3xKillTriggered = true;
+              killReason = `Cầu chì an toàn 3x Kill: CPA thực tế (${actualCpa.toLocaleString()} đ) vượt quá 3x CPA mục tiêu (${targetCpa.toLocaleString()} đ) khi tiêu phí đạt ${cost.toLocaleString()} đ (Số đơn: ${realConv})`;
+            }
+          }
+        }
+
+        if (is3xKillTriggered) {
+          if (dryRun) {
+            console.log(`[RULE_ENGINE][DRY_RUN][3X_KILL] Would force pause campaign ${snapshot.name} due to: ${killReason}`);
+          } else {
+            await this.execute3xKill(rule, snapshot, mutationsService, userId, adsAccountId, customerId, killReason);
+          }
+          processedCampaignIds.add(snapshot.campaignId);
+          continue;
+        }
+
         // 5. Evaluate AND/OR conditions
         const { matched, reason } = this.evaluateRuleConditions(snapshot, rule.conditions);
         if (matched) {
@@ -321,7 +356,20 @@ export class RulesEngine {
           case 'adjust_budget':
             const currentBudgetMicros = BigInt(snapshot.budgetMicros || "0");
             const adjustment = Number(action.actionValue); // e.g. 20 for +20%, -10 for -10%
-            const newBudgetMicros = currentBudgetMicros + (currentBudgetMicros * BigInt(Math.round(adjustment))) / BigInt(100);
+            let newBudgetMicros = currentBudgetMicros + (currentBudgetMicros * BigInt(Math.round(adjustment))) / BigInt(100);
+            
+            // Guardrail: Budget Suffocation Protection
+            if (rule.guardrailBudgetSuffocation && adjustment < 0) {
+              const targetCpa = Number(snapshot.targetCpaMicros || 0) / 1000000;
+              if (targetCpa > 0) {
+                const minBudgetMicros = BigInt(Math.round(5 * targetCpa * 1000000));
+                if (newBudgetMicros < minBudgetMicros) {
+                  console.log(`[RULE_ENGINE] Guardrail: Capped budget reduction for campaign ${snapshot.name} at 5x Target CPA (${5 * targetCpa} đ) to prevent budget suffocation.`);
+                  newBudgetMicros = minBudgetMicros;
+                }
+              }
+            }
+            
             await mutationsService.updateCampaignBudget(snapshot.campaignId, newBudgetMicros.toString());
             break;
           case 'send_telegram':
@@ -404,6 +452,64 @@ export class RulesEngine {
       } catch (err) {
         console.error(`[RULE_ENGINE] Failed to execute action ${action.actionType} for ${snapshot.campaignId}:`, err);
       }
+    }
+  }
+
+  private static async execute3xKill(
+    rule: RuleWithDetails,
+    snapshot: any,
+    mutationsService: MutationsService,
+    userId: string,
+    adsAccountId: string,
+    customerId: string,
+    reason: string
+  ) {
+    try {
+      console.log(`[RULE_ENGINE][3X_KILL] Force pausing campaign ${snapshot.name} (ID: ${snapshot.campaignId}) due to: ${reason}`);
+      
+      // 1. Force Pause campaign
+      await mutationsService.toggleCampaignStatus(snapshot.campaignId, 'PAUSED');
+      
+      // 2. Log rule execution
+      await db.insert(ruleLogs).values({
+        ruleId: rule.id,
+        ruleName: `${rule.name} (3x Kill)`,
+        adsAccountId: adsAccountId,
+        customerId: customerId,
+        campaignId: snapshot.campaignId,
+        campaignName: snapshot.name,
+        actionType: 'pause_campaign',
+        metricsSnapshot: {
+          cost: snapshot.costMicros,
+          conversions: snapshot.realConversions,
+          cpa: snapshot.realConversions > 0 ? Number(snapshot.costMicros) / snapshot.realConversions : 0,
+          reason: reason
+        }
+      });
+      
+      // 3. Send Telegram notifications if configured or general warning
+      const adsAcc = await db.query.adsAccounts.findFirst({
+        where: eq(adsAccounts.id, adsAccountId)
+      });
+      const accountName = adsAcc?.name || customerId;
+      
+      const alertMessage = 
+        `🚨 <b>CẦU CHÌ AN TOÀN SẬP (3X KILL RULE)</b>\n\n` +
+        `👤 <b>Tài khoản:</b> ${accountName}\n` +
+        `🎯 <b>Chiến dịch:</b> <code>${snapshot.name}</code> (ID: ${snapshot.campaignId})\n` +
+        `⚡ <b>Hành động:</b> <b>Tạm dừng chiến dịch (PAUSED)</b>\n` +
+        `📝 <b>Lý do kích hoạt:</b> ${reason}\n\n` +
+        `⏰ <i>Dập cầu chì lúc: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</i>`;
+
+      // Find if rule has telegram action configured
+      const teleAction = rule.actions.find(a => a.actionType === 'send_telegram');
+      if (teleAction && teleAction.telegramConnectionId) {
+        await TelegramService.queueConnectionNotification(teleAction.telegramConnectionId, "GGAds 3x Kill Alert", alertMessage);
+      } else {
+        await TelegramService.queueNotification(userId, "GGAds 3x Kill Alert", alertMessage);
+      }
+    } catch (err) {
+      console.error(`[RULE_ENGINE][3X_KILL] Error executing 3x kill for ${snapshot.campaignId}:`, err);
     }
   }
 }
