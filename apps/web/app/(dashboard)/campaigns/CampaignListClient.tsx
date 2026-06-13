@@ -270,6 +270,7 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
               type="date" 
               value={startDate}
               onChange={(e) => router.push(`?startDate=${e.target.value}&endDate=${endDate}`)}
+              onClick={(e) => e.currentTarget.showPicker()}
               className="bg-transparent border-0 text-foreground outline-none text-xs cursor-pointer font-bold"
             />
             <span className="text-border">|</span>
@@ -278,6 +279,7 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
               type="date" 
               value={endDate}
               onChange={(e) => router.push(`?startDate=${startDate}&endDate=${e.target.value}`)}
+              onClick={(e) => e.currentTarget.showPicker()}
               className="bg-transparent border-0 text-foreground outline-none text-xs cursor-pointer font-bold"
             />
           </div>

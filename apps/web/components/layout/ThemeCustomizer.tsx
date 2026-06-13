@@ -3,6 +3,7 @@
 import { X, Check, Sun, Moon, Maximize2, Minimize2 } from 'lucide-react'
 import { useThemeCustomizer, ThemePreset, AccentColor } from '@/components/providers/ThemeProviderCustomizer'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ThemeCustomizerProps {
   isOpen: boolean
@@ -23,7 +24,10 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
 
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
 
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
     const saved = localStorage.getItem('theme') as 'light' | 'dark' | null
     if (saved) {
       setThemeMode(saved)
@@ -41,6 +45,7 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
   }
 
   if (!isOpen) return null
+  if (!mounted) return null
 
   const BASE_PRESETS = [
     { id: 'zinc', name: 'Zinc (Xám chì)', color: 'bg-zinc-500' },
@@ -64,7 +69,7 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
     { value: '12px', label: '12px (Bo tròn)' }
   ]
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[1500] animate-in fade-in duration-200">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -223,6 +228,7 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

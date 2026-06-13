@@ -301,7 +301,7 @@ export default function NewAccountPageClient() {
               <Button 
                 onClick={handleSaveAccounts} 
                 disabled={syncing || selectedIds.length === 0}
-                style={{ width: '100%', height: 48, fontSize: 15, fontWeight: 600 }}
+                className="w-full h-12 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-950 dark:hover:bg-slate-200 disabled:bg-zinc-100 disabled:text-zinc-400 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600 disabled:cursor-not-allowed rounded-xl font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg cursor-pointer"
               >
                 {syncing ? <RefreshCw size={18} className="animate-spin mr-2" /> : null}
                 Lưu {selectedIds.length} tài khoản đã chọn

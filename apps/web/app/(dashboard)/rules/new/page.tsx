@@ -264,15 +264,27 @@ function NewRulePageContent() {
           <CardContent className="grid gap-6">
             <div className="flex gap-4">
               <Button 
+                type="button"
                 variant={targetType === 'all' ? 'default' : 'outline'}
-                className="flex-1 rounded-[calc(var(--radius)*0.8)]"
+                className={cn(
+                  "flex-1 rounded-xl font-bold transition-all border",
+                  targetType === 'all'
+                    ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-950 border-transparent shadow-sm"
+                    : "text-muted-foreground border-border hover:bg-secondary/40 hover:text-foreground bg-transparent"
+                )}
                 onClick={() => setTargetType('all')}
               >
                 Tất cả chiến dịch
               </Button>
               <Button 
+                type="button"
                 variant={targetType === 'specific' ? 'default' : 'outline'}
-                className="flex-1 rounded-[calc(var(--radius)*0.8)]"
+                className={cn(
+                  "flex-1 rounded-xl font-bold transition-all border",
+                  targetType === 'specific'
+                    ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-950 border-transparent shadow-sm"
+                    : "text-muted-foreground border-border hover:bg-secondary/40 hover:text-foreground bg-transparent"
+                )}
                 onClick={() => setTargetType('specific')}
               >
                 Chiến dịch cụ thể
@@ -305,20 +317,50 @@ function NewRulePageContent() {
                             else setSelectedCampaignIds(selectedCampaignIds.filter(id => id !== c.id))
                           }}
                         />
-                        <Label htmlFor={c.id} className="flex-1 cursor-pointer font-medium text-sm text-[var(--text-2)]">
-                          {c.name} 
-                          <span className="ml-2 text-[10px] text-[var(--text-3)] uppercase">{c.status}</span>
+                        <Label htmlFor={c.id} className="flex-1 cursor-pointer font-semibold text-sm text-[var(--text-2)] flex items-center justify-between gap-3 min-w-0">
+                          <span className="truncate">{c.name}</span>
+                          <span className={cn(
+                            "text-[9px] font-extrabold px-2 py-0.5 rounded-md border tracking-wide uppercase inline-flex items-center justify-center shrink-0 leading-none",
+                            c.status === 'ENABLED'
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                              : "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20"
+                          )}>
+                            {c.status === 'ENABLED' ? 'Hoạt động' : (c.status === 'PAUSED' ? 'Tạm dừng' : c.status)}
+                          </span>
                         </Label>
                       </div>
                     ))}
                   </div>
                 )}
                 
-                <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between">
-                  <p className="text-xs text-[var(--text-3)] font-medium">Đã chọn {selectedCampaignIds.length} chiến dịch</p>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedCampaignIds([])} className="text-xs h-7 px-2 text-[var(--text-2)]">
-                    Bỏ chọn tất cả
-                  </Button>
+                <div className="mt-4 pt-4 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-[var(--text-3)] font-semibold">
+                    Đã chọn <span className="text-primary font-bold">{selectedCampaignIds.length}</span> chiến dịch
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const allFilteredIds = filteredCampaigns.map(c => c.id)
+                        const newSelected = Array.from(new Set([...selectedCampaignIds, ...allFilteredIds]))
+                        setSelectedCampaignIds(newSelected)
+                      }}
+                      className="text-xs h-8 px-3 rounded-md font-semibold border-border hover:bg-secondary/60 text-foreground transition-all cursor-pointer"
+                    >
+                      Chọn tất cả
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedCampaignIds([])} 
+                      className="text-xs h-8 px-3 rounded-md font-semibold border-destructive/20 hover:bg-destructive/10 text-destructive hover:border-destructive/30 transition-all cursor-pointer"
+                    >
+                      Bỏ chọn tất cả
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -432,12 +474,13 @@ function NewRulePageContent() {
                   ))}
 
                   <Button 
-                    variant="ghost" 
+                    type="button"
+                    variant="outline" 
                     size="sm" 
-                    className="text-[var(--primary)] hover:bg-[var(--primary)]/10 mt-2 h-8 rounded-[calc(var(--radius)*0.6)]"
+                    className="mt-3 h-9 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:border-primary transition-all font-semibold flex items-center gap-1.5 cursor-pointer px-4"
                     onClick={() => handleAddCondition(Number(groupId))}
                   >
-                    <Plus className="w-3 h-3 mr-1" /> Thêm điều kiện (AND)
+                    <Plus className="w-3.5 h-3.5" /> Thêm điều kiện (AND)
                   </Button>
                 </div>
               </div>
@@ -728,7 +771,7 @@ function NewRulePageContent() {
           <Button variant="outline" onClick={() => router.back()} className="rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-2)] hover:bg-[var(--bg-secondary)]">Hủy bỏ</Button>
           <Button 
             size="lg" 
-            className="px-10 gap-2 shadow-sm rounded-[calc(var(--radius)*0.8)] text-white"
+            className="px-10 gap-2 shadow-md hover:shadow-lg rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-950 dark:hover:bg-slate-200 transition-all flex items-center justify-center cursor-pointer disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
             onClick={handleSave}
             disabled={loading}
           >
