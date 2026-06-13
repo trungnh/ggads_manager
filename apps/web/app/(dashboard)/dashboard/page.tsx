@@ -83,6 +83,16 @@ export default async function DashboardPage({
   const accountIds = accounts.map(a => a.id);
   const customerIds = accounts.map(a => a.customerId);
 
+  // Fetch the latest updatedAt from campaignsSnapshot for this user's accounts
+  const latestSnapshotUpdate = await db
+    .select({ updatedAt: campaignsSnapshot.updatedAt })
+    .from(campaignsSnapshot)
+    .where(inArray(campaignsSnapshot.customerId, customerIds))
+    .orderBy(desc(campaignsSnapshot.updatedAt))
+    .limit(1);
+
+  const lastUpdatedAt = latestSnapshotUpdate[0]?.updatedAt || null;
+
   // 2. Query distinct dates in the database for the date dropdown
   const distinctDatesResult = await db
     .selectDistinct({ date: campaignsSnapshot.date })
@@ -353,6 +363,61 @@ export default async function DashboardPage({
     showDateStr = formatDateVN(startDateStr);
   }
 
+  // Format last updated time
+  let lastUpdatedStr = "Chưa có dữ liệu";
+  if (lastUpdatedAt) {
+    const formatter = new Intl.DateTimeFormat("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(lastUpdatedAt);
+    const partMap = Object.fromEntries(parts.map(p => [p.type, p.value]));
+    
+    const day = partMap.day;
+    const month = partMap.month;
+    const year = partMap.year;
+    const hour = partMap.hour;
+    const minute = partMap.minute;
+
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Get current date and yesterday in Asia/Ho_Chi_Minh
+    const now = new Date();
+    const nowParts = new Intl.DateTimeFormat("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
+    const nowPartMap = Object.fromEntries(nowParts.map(p => [p.type, p.value]));
+    const todayStr = `${nowPartMap.year}-${nowPartMap.month}-${nowPartMap.day}`;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayParts = new Intl.DateTimeFormat("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(yesterday);
+    const yesterdayPartMap = Object.fromEntries(yesterdayParts.map(p => [p.type, p.value]));
+    const yesterdayStr = `${yesterdayPartMap.year}-${yesterdayPartMap.month}-${yesterdayPartMap.day}`;
+
+    if (dateStr === todayStr) {
+      lastUpdatedStr = `Hôm nay (${day}/${month}/${year}) ${hour}:${minute}`;
+    } else if (dateStr === yesterdayStr) {
+      lastUpdatedStr = `Hôm qua (${day}/${month}/${year}) ${hour}:${minute}`;
+    } else {
+      lastUpdatedStr = `${day}/${month}/${year} ${hour}:${minute}`;
+    }
+  }
+
   return (
     <div className="w-full pb-10 space-y-6 font-sans">
       
@@ -363,7 +428,7 @@ export default async function DashboardPage({
             Bảng Điều Khiển Hệ Thống
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Dữ liệu cập nhật mới nhất lúc: <span className="font-semibold text-foreground">{showDateStr} 21:10</span>
+            Dữ liệu cập nhật mới nhất lúc: <span className="font-semibold text-foreground">{lastUpdatedStr}</span>
           </p>
         </div>
 
