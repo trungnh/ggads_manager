@@ -5,7 +5,9 @@ import { eq } from "drizzle-orm";
 
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 });
+  }
 
   try {
     // 1. Fetch all pancake accounts for this user
@@ -63,20 +65,22 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error("[PANCAKE_TAGS_GET_GLOBAL]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Error", success: false }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 });
+  }
 
   try {
     const body = await req.json();
     const { shopId, apiKey } = body;
 
     if (!shopId || !apiKey) {
-      return new NextResponse("Missing Shop ID or API Key", { status: 400 });
+      return NextResponse.json({ error: "Missing Shop ID or API Key", success: false }, { status: 400 });
     }
 
     // Official Pancake POS API call
@@ -100,6 +104,6 @@ export async function POST(req: Request) {
     return NextResponse.json(tags);
   } catch (error) {
     console.error("[PANCAKE_TAGS]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Error", success: false }, { status: 500 });
   }
 }

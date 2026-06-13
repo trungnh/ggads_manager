@@ -94,7 +94,9 @@ export default function PancakeModal({ isOpen, onClose, onSave, initialData }: P
   }
 
   const fetchTags = async (overrideAccount?: any) => {
-    const account = overrideAccount || accounts.find(a => a.id === formData.pancakeAccountId)
+    // If overrideAccount is a React click event, ignore it to prevent overriding with the event object
+    const isEvent = overrideAccount && (overrideAccount.target || overrideAccount.nativeEvent || typeof overrideAccount.preventDefault === 'function');
+    const account = (!isEvent && overrideAccount) || accounts.find(a => a.id === formData.pancakeAccountId)
     if (!account) return
 
     setLoadingTags(true)
@@ -104,12 +106,25 @@ export default function PancakeModal({ isOpen, onClose, onSave, initialData }: P
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shopId: account.shopId, apiKey: account.apiKey })
       })
-      const data = await res.json()
+
+      let data
+      const contentType = res.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json()
+      } else {
+        const text = await res.text()
+        try {
+          data = JSON.parse(text)
+        } catch {
+          data = { error: text }
+        }
+      }
+
       if (res.ok) {
         setAvailableTags(data)
       } else {
-        // Only alert if manually triggered (no overrideAccount)
-        if (!overrideAccount) {
+        // Only alert if manually triggered
+        if (!overrideAccount || isEvent) {
           alert(data.error || 'Không thể lấy danh sách thẻ. Vui lòng kiểm tra API Key.')
         }
       }
@@ -340,7 +355,7 @@ export default function PancakeModal({ isOpen, onClose, onSave, initialData }: P
               <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Loại trừ thẻ đơn hàng</label>
               <button
                 type="button"
-                onClick={fetchTags}
+                onClick={() => fetchTags()}
                 disabled={loadingTags || !formData.pancakeAccountId}
                 className="flex items-center gap-2 text-xs font-semibold text-[var(--primary)] hover:opacity-80 disabled:opacity-30 transition-all border-0 bg-transparent cursor-pointer"
               >
