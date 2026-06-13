@@ -57,6 +57,8 @@ const worker = new Worker('RuleEvaluationQueue', async (job: Job) => {
     }
   } else if (job.name === 'check-performance-reports') {
     await checkAndSendPerformanceReports();
+  } else if (job.name === 'sync-all-campaigns') {
+    await runAutoCampaignSync();
   }
 }, { connection: redisConnection });
 
@@ -245,6 +247,47 @@ async function runAutoHealthAudits() {
     }
   } catch (err: any) {
     console.error(`[Worker] Error in runAutoHealthAudits:`, err.message);
+  }
+}
+
+async function runAutoCampaignSync() {
+  console.log(`[Worker] Running Auto Campaign Sync...`);
+  try {
+    const activeAccounts = await db.query.adsAccounts.findMany({
+      where: eq(adsAccounts.status, 'ACTIVE')
+    });
+
+    if (activeAccounts.length === 0) {
+      console.log(`[Worker] No active accounts to sync.`);
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    for (const account of activeAccounts) {
+      try {
+        const userAccount = await db.query.userAdsAccounts.findFirst({
+          where: eq(userAdsAccounts.adsAccountId, account.id)
+        });
+
+        if (!userAccount) {
+          console.warn(`[Worker] No user found for account ${account.customerId}, skipping sync...`);
+          continue;
+        }
+
+        console.log(`[Worker] Syncing campaigns for account ${account.customerId} (${account.id})...`);
+        await CampaignSyncService.syncCampaigns(
+          userAccount.userId,
+          account.id,
+          account.customerId,
+          todayStr
+        );
+      } catch (err: any) {
+        console.error(`[Worker] Failed to sync campaigns for account ${account.customerId}:`, err.message);
+      }
+    }
+  } catch (error: any) {
+    console.error(`[Worker] Error in runAutoCampaignSync:`, error.message);
   }
 }
 
@@ -622,6 +665,13 @@ async function scheduleJobs() {
     }
   });
   console.log('[Worker] Scheduled performance report job to run every 5 minutes.');
+
+  await evaluationQueue.add('sync-all-campaigns', {}, {
+    repeat: {
+      pattern: '*/5 * * * *', // Every 5 minutes
+    }
+  });
+  console.log('[Worker] Scheduled campaigns sync job to run every 5 minutes.');
 
   await scheduleQueue.add('execute-all-schedules', {}, {
     repeat: {
