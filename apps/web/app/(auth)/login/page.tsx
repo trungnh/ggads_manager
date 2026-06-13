@@ -72,7 +72,6 @@ export default function LoginPage() {
                 id="username"
                 name="username"
                 type="text"
-                placeholder="admin"
                 required
                 className="rounded-xl h-11"
               />
@@ -87,7 +86,7 @@ export default function LoginPage() {
                 className="rounded-xl h-11"
               />
             </div>
-            <Button type="submit" disabled={loading} className="w-full h-11 font-bold rounded-xl bg-slate-900 hover:bg-slate-800 transition-all">
+            <Button type="submit" disabled={loading} className="w-full h-11 font-bold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all">
               {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : "Đăng nhập"}
             </Button>
           </form>

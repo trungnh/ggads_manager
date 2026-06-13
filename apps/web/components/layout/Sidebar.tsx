@@ -24,7 +24,7 @@ import {
   Radar,
   Activity
 } from 'lucide-react'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useThemeCustomizer } from '@/components/providers/ThemeProviderCustomizer'
 
 // ── Cấu trúc nav items được tổ chức khoa học ──────────────────────
@@ -105,9 +105,18 @@ const BADGE_CLASSES: Record<string, string> = {
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const { isSidebarCollapsed, setIsSidebarCollapsed } = useThemeCustomizer()
   const [stats, setStats] = useState({ campaignsCount: 4, rulesCount: 8 })
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+
+  // Lọc menu items dựa trên vai trò của người dùng
+  const filteredNav = NAV.filter((group) => {
+    if (group.section === 'Quản trị hệ thống') {
+      return session?.user?.role === 'admin' || session?.user?.role === 'superadmin'
+    }
+    return true
+  })
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -155,7 +164,7 @@ export default function Sidebar() {
 
       {/* ── Navigation ── */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin">
-        {NAV.map((group) => (
+        {filteredNav.map((group) => (
           <div key={group.section} className="space-y-1.5">
             {/* Section label */}
             {!isSidebarCollapsed ? (
