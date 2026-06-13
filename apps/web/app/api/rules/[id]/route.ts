@@ -43,8 +43,8 @@ export async function PUT(
           conditions.map((c: any) => ({
             ruleId: id,
             conditionGroup: c.conditionGroup || 0,
-            metric: c.metric,
-            operator: c.operator,
+            metric: c.metric ? c.metric.trim() : "",
+            operator: c.operator ? c.operator.trim() : "",
             value: c.value.toString(),
             valueMax: c.valueMax?.toString(),
             sortOrder: c.sortOrder || 0
@@ -59,7 +59,7 @@ export async function PUT(
           actions.map((a: any) => ({
             ruleId: id,
             actionOrder: a.actionOrder || 0,
-            actionType: a.actionType,
+            actionType: a.actionType ? a.actionType.trim() : "",
             actionValue: a.actionValue?.toString(),
             alertMessage: a.alertMessage,
             telegramConnectionId: a.telegramConnectionId
