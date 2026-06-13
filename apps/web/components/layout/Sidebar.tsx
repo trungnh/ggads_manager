@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Radar,
-  Activity
+  Activity,
+  BookOpen
 } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import { useThemeCustomizer } from '@/components/providers/ThemeProviderCustomizer'
@@ -266,6 +267,25 @@ export default function Sidebar() {
             </>
           )}
         </div>
+
+        {/* User Guide */}
+        <Link
+          href="/guide"
+          className={`flex items-center rounded-md transition-all text-xs font-medium ${
+            isSidebarCollapsed ? 'justify-center py-2.5' : 'px-3 py-2 gap-3'
+          } ${
+            pathname === '/guide'
+              ? 'text-foreground bg-secondary font-semibold border-l-2 border-primary'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+          }`}
+          title={isSidebarCollapsed ? "Hướng dẫn sử dụng" : undefined}
+        >
+          <BookOpen 
+            size={isSidebarCollapsed ? 18 : 16} 
+            className={pathname === '/guide' ? 'text-primary' : 'text-muted-foreground'}
+          />
+          {!isSidebarCollapsed && <span>Hướng dẫn sử dụng</span>}
+        </Link>
 
         {/* System Settings */}
         <Link

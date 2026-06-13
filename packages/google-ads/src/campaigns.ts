@@ -132,6 +132,7 @@ export class CampaignsService {
         campaign.status, 
         campaign.primary_status,
         campaign.bidding_strategy_type,
+        campaign_budget.amount_micros,
         campaign.maximize_conversions.target_cpa_micros,
         campaign.maximize_conversion_value.target_roas,
         campaign.target_cpa.target_cpa_micros,

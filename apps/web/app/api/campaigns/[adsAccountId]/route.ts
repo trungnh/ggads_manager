@@ -44,7 +44,8 @@ export async function GET(
       const mappedCampaigns = rawCampaigns.map(rc => ({
         id: rc.campaign.id,
         name: rc.campaign.name,
-        status: rc.campaign.status
+        status: rc.campaign.status,
+        budget: rc.campaignBudget?.amountMicros ? String(rc.campaignBudget.amountMicros) : "0"
       }));
 
       return NextResponse.json({ campaigns: mappedCampaigns });
@@ -62,7 +63,8 @@ export async function GET(
     const campaigns = await db.select({
       id: campaignsSnapshot.campaignId,
       name: campaignsSnapshot.name,
-      status: campaignsSnapshot.status
+      status: campaignsSnapshot.status,
+      budget: campaignsSnapshot.budgetMicros
     })
     .from(campaignsSnapshot)
     .where(and(
@@ -75,7 +77,8 @@ export async function GET(
       const latestSnapshots = await db.select({
         id: campaignsSnapshot.campaignId,
         name: campaignsSnapshot.name,
-        status: campaignsSnapshot.status
+        status: campaignsSnapshot.status,
+        budget: campaignsSnapshot.budgetMicros
       })
       .from(campaignsSnapshot)
       .where(eq(campaignsSnapshot.customerId, account.customerId))
