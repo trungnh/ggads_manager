@@ -372,7 +372,12 @@ function NewRulePageContent() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle className="text-lg text-[var(--text-1)]">3. Điều kiện</CardTitle>
-              <CardDescription className="text-[var(--text-3)]">Khi các điều kiện này thỏa mãn, Rule sẽ kích hoạt.</CardDescription>
+              <CardDescription className="text-[var(--text-3)]">
+                Khi các điều kiện này thỏa mãn, Rule sẽ kích hoạt.
+                <span className="block mt-1 text-[11px] text-muted-foreground italic font-medium">
+                  * Chú thích: CFLC (Cost From Last Conversion) là chi tiêu thêm của chiến dịch kể từ khi có lượt chuyển đổi (đơn hàng) gần nhất
+                </span>
+              </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={handleAddGroup} className="rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-2)] hover:bg-[var(--bg-secondary)]">
               <Plus className="w-4 h-4 mr-1" /> Thêm nhóm (OR)
@@ -419,7 +424,14 @@ function NewRulePageContent() {
                         }}
                       >
                         <SelectTrigger className="w-[180px] h-9 rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-1)]">
-                          <SelectValue />
+                          <SelectValue placeholder="Chọn chỉ số...">
+                            {c.metric === 'cflc_cost' && 'CFLC Chi tiêu'}
+                            {c.metric === 'real_cpa' && 'Giá đơn thực (CPA)'}
+                            {c.metric === 'real_roas' && 'ROAS đơn thực'}
+                            {c.metric === 'cost' && 'Tổng chi tiêu hôm nay'}
+                            {c.metric === 'real_conversions' && 'Số đơn thực'}
+                            {c.metric === 'budget_spent_pct' && '% Ngân sách đã tiêu'}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cflc_cost">CFLC Chi tiêu</SelectItem>
@@ -440,7 +452,15 @@ function NewRulePageContent() {
                         }}
                       >
                         <SelectTrigger className="w-[100px] h-9 rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-1)]">
-                          <SelectValue />
+                          <SelectValue className="w-full">
+                            <span className="w-full text-center text-amber-600 dark:text-amber-400 font-bold block text-sm">
+                              {c.operator === 'gt' && '>'}
+                              {c.operator === 'lt' && '<'}
+                              {c.operator === 'gte' && '>='}
+                              {c.operator === 'lte' && '<='}
+                              {c.operator === 'eq' && '='}
+                            </span>
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="gt">{'>'}</SelectItem>
@@ -505,7 +525,12 @@ function NewRulePageContent() {
                   }}
                 >
                   <SelectTrigger className="w-[200px] rounded-[calc(var(--radius)*0.8)] border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-1)]">
-                    <SelectValue />
+                    <SelectValue placeholder="Chọn hành động...">
+                      {action.actionType === 'pause_campaign' && 'Tắt chiến dịch'}
+                      {action.actionType === 'enable_campaign' && 'Bật chiến dịch'}
+                      {action.actionType === 'adjust_budget' && 'Điều chỉnh ngân sách'}
+                      {action.actionType === 'send_telegram' && 'Gửi cảnh báo Telegram'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pause_campaign">Tắt chiến dịch</SelectItem>
