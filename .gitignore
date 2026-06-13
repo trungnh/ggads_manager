@@ -8,3 +8,7 @@ others
 .turbo/
 .env
 setup-vps.sh
+dist/
+.next/
+out/
+build/
