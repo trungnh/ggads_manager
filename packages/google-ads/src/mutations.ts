@@ -23,7 +23,7 @@ export class MutationsService {
       ]
     };
 
-    return await this.client.request('/campaigns:mutate', {
+    return await this.client.request(`/customers/${this.client.customerId}/campaigns:mutate`, {
       method: 'POST',
       body: JSON.stringify(payload)
     });
@@ -54,7 +54,7 @@ export class MutationsService {
       ]
     };
 
-    return await this.client.request('/campaignBudgets:mutate', {
+    return await this.client.request(`/customers/${this.client.customerId}/campaignBudgets:mutate`, {
       method: 'POST',
       body: JSON.stringify(payload)
     });

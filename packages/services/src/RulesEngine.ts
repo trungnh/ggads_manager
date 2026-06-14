@@ -1,4 +1,4 @@
-import { db, ruleLogs, campaignsSnapshot, optimizationRules, ruleConditions, ruleActions, adsAccounts } from '@repo/db';
+import { db, ruleLogs, campaignsSnapshot, optimizationRules, ruleConditions, ruleActions, adsAccounts, campaignSettings } from '@repo/db';
 import { MutationsService } from '@repo/google-ads';
 import { eq, and, sql } from 'drizzle-orm';
 import { TelegramService } from './TelegramService';
@@ -50,8 +50,34 @@ export class RulesEngine {
 
     console.log(`[RULE_ENGINE] Processing ${rules.length} rules against ${snapshots.length} campaigns...`);
 
-    const mutationsService = new MutationsService(userId, customerId);
+    const [account] = await db.select({ 
+      oauthConnectionId: adsAccounts.oauthConnectionId,
+      loginCustomerId: adsAccounts.loginCustomerId
+    }).from(adsAccounts).where(eq(adsAccounts.id, adsAccountId)).limit(1);
+    
+    const oauthConnectionId = account?.oauthConnectionId;
+    if (!oauthConnectionId) {
+      console.error(`[RULE_ENGINE] No OAuth connection linked to account ${customerId}`);
+      return;
+    }
+
+    const mutationsService = new MutationsService(
+      oauthConnectionId, 
+      customerId, 
+      account?.loginCustomerId || undefined
+    );
     const processedCampaignIds = new Set<string>();
+
+    // Fetch excluded campaigns (AUTO turned off) from settings
+    const excludedCampaigns = await db.select({
+      campaignId: campaignSettings.campaignId
+    })
+    .from(campaignSettings)
+    .where(and(
+      eq(campaignSettings.customerId, customerId),
+      eq(campaignSettings.isExcluded, true)
+    ));
+    const excludedCampaignIds = new Set(excludedCampaigns.map(c => c.campaignId));
 
     // 3. Process each rule (ordered by priority/created)
     for (const rule of rules) {
@@ -60,6 +86,10 @@ export class RulesEngine {
       // 4. Identify target campaigns
       const targetSnapshots = snapshots.filter(s => {
         if (processedCampaignIds.has(s.campaignId)) return false;
+        if (excludedCampaignIds.has(s.campaignId)) {
+          console.log(`[RULE_ENGINE] Campaign ${s.name} (${s.campaignId}) skipped because it is excluded from auto-optimization (Bỏ AUTO).`);
+          return false;
+        }
         return this.isCampaignTargeted(s, rule);
       });
 
@@ -144,10 +174,22 @@ export class RulesEngine {
         where: eq(ruleActions.ruleId, rule.id),
       });
 
+      // Trim values to avoid spacing issues causing match failure
+      const trimmedConditions = conditions.map(c => ({
+        ...c,
+        metric: c.metric ? c.metric.trim() : "",
+        operator: c.operator ? c.operator.trim() : "",
+      }));
+
+      const trimmedActions = actions.map(a => ({
+        ...a,
+        actionType: a.actionType ? a.actionType.trim() : "",
+      }));
+
       detailedRules.push({
         ...rule,
-        conditions,
-        actions,
+        conditions: trimmedConditions,
+        actions: trimmedActions,
       } as RuleWithDetails);
     }
 

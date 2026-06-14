@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
                 <Lock size={20} className="text-blue-600" /> Data Usage Disclosure (Google API Services)
               </h2>
               <p className="text-slate-600 mb-4 leading-relaxed">
-                Our application, <strong>NNHD Ads Manager</strong>, complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-blue-600 hover:underline">Google API Service User Data Policy</a>, including the Limited Use requirements.
+                Our application, <strong>Ads Manager</strong>, complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-blue-600 hover:underline">Google API Service User Data Policy</a>, including the Limited Use requirements.
               </p>
               
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
@@ -57,7 +57,7 @@ export default function PrivacyPolicy() {
                 <Eye size={20} className="text-blue-600" /> Chính sách Sử dụng Dữ liệu Google (Vietnamese)
               </h2>
               <p className="text-slate-600 mb-6 leading-relaxed">
-                Ứng dụng <strong>NNHD Ads Manager</strong> cam kết tuân thủ các quy định về bảo mật dữ liệu của Google.
+                Ứng dụng <strong>Ads Manager</strong> cam kết tuân thủ các quy định về bảo mật dữ liệu của Google.
               </p>
 
               <div className="grid md:grid-cols-2 gap-6">

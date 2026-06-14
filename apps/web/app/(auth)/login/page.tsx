@@ -51,7 +51,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-center text-slate-900">
-            NNHD Ads Manager
+            Ads Manager
           </CardTitle>
           <CardDescription className="text-center">
             Đăng nhập để quản lý chiến dịch của bạn
@@ -93,7 +93,7 @@ export default function LoginPage() {
 
         </CardContent>
         <CardFooter className="pb-8 justify-center">
-           <p className="text-xs text-slate-400">© 2025 NNHD Ads Manager</p>
+           <p className="text-xs text-slate-400">© 2025 Ads Manager</p>
         </CardFooter>
       </Card>
     </div>

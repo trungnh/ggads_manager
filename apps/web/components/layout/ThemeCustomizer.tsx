@@ -224,7 +224,7 @@ export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProp
 
         {/* Footer info */}
         <div className="p-4 border-t border-border bg-secondary/30 text-center text-[9px] text-muted-foreground font-semibold shrink-0 uppercase tracking-widest">
-          NNHD Ads Manager v1.0 • Built with AI
+          Ads Manager v1.0 • Built with AI
         </div>
 
       </div>
