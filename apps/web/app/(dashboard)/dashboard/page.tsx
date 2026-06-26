@@ -453,7 +453,7 @@ export default async function DashboardPage({
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 text-3xl lg:text-4xl font-black text-foreground tracking-tight leading-none">
+          <div className="mt-4 text-3xl lg:text-3xl font-black text-foreground tracking-tight leading-none">
             {totalCost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium">
@@ -469,7 +469,7 @@ export default async function DashboardPage({
               <Target className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 text-3xl lg:text-4xl font-black text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
+          <div className="mt-4 text-3xl lg:text-3xl font-black text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
             {totalCRMConvsSuccess} đơn
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium">
@@ -486,15 +486,15 @@ export default async function DashboardPage({
             </div>
           </div>
           <div className={cn(
-            "mt-4 text-3xl lg:text-4xl font-black tracking-tight leading-none",
+            "mt-4 text-3xl lg:text-3xl font-black tracking-tight leading-none",
             cpa > 100000 ? "text-rose-500 dark:text-rose-400" : "text-foreground"
           )}>
-            CPA {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+            {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium flex justify-between items-center w-full">
             <span>Dựa trên đơn thực tế</span>
             <span className={cn(
-              "px-2 py-0.5 rounded border font-bold text-[10px]",
+              "px-2 py-0.5 rounded border font-bold text-xl",
               roas >= 2 
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
                 : "bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20"
@@ -513,7 +513,7 @@ export default async function DashboardPage({
             </div>
           </div>
           <div className={cn(
-            "mt-4 text-3xl lg:text-4xl font-black tracking-tight leading-none", 
+            "mt-4 text-3xl lg:text-3xl font-black tracking-tight leading-none", 
             netProfit >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
           )}>
             {netProfit >= 0 ? '+' : ''}{netProfit.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ

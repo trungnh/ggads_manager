@@ -34,7 +34,7 @@ const NAV = [
     section: 'Báo cáo & Phân tích',
     items: [
       { href: '/dashboard',   icon: LayoutGrid,  label: 'Bảng tổng quan' },
-      { href: '/revenue',     icon: LineChart,   label: 'Báo cáo Doanh thu' },
+      { href: '/revenue',     icon: LineChart,   label: 'Thống kê Doanh thu' },
     ],
   },
   {
@@ -42,7 +42,7 @@ const NAV = [
     items: [
       { href: '/campaigns',   icon: Megaphone,   label: 'Chiến dịch Ads' },
       { href: '/rules',       icon: Sliders,     label: 'Quy tắc tự động' },
-      { href: '/dayparting',  icon: Clock,       label: 'Lập lịch chạy thầu' },
+      { href: '/dayparting',  icon: Clock,       label: 'Lập lịch' },
       { href: '/schedules',   icon: Calendar,    label: 'Lịch chạy biểu' },
     ],
   },
@@ -57,7 +57,7 @@ const NAV = [
   {
     section: 'Cấu hình & Tích hợp',
     items: [
-      { href: '/accounts',    icon: FolderSyncIcon,  label: 'Tài khoản Ads' },
+      { href: '/accounts',    icon: FolderSyncIcon,  label: 'Đồng bộ TK Ads' },
       { href: '/products',    icon: Package,     label: 'Sản phẩm' },
       { href: '/connections', icon: LinkIcon,    label: 'Quản lý kết nối' },
     ],
