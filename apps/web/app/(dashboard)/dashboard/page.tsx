@@ -43,8 +43,9 @@ import {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams?: { date?: string; accountId?: string };
+  searchParams?: Promise<{ date?: string; accountId?: string }>;
 }) {
+  const resolvedSearchParams = (await searchParams) || {};
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
@@ -103,8 +104,8 @@ export default async function DashboardPage({
   const distinctDates = distinctDatesResult.map(d => d.date);
 
   const actualTodayDate = new Date().toISOString().split('T')[0]; // "2026-06-01"
-  const dateParam = searchParams?.date || "today";
-  const selectedAccountId = searchParams?.accountId || "all";
+  const dateParam = resolvedSearchParams.date || "today";
+  const selectedAccountId = resolvedSearchParams.accountId || "all";
 
   // Calculate dynamic start and end dates based on relative ranges
   let startDateStr = actualTodayDate;
@@ -444,7 +445,6 @@ export default async function DashboardPage({
 
       {/* KPI Cards Grid - Real data populated */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
         {/* Card 1: Spend vs Daily Budget sum */}
         <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
           <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -453,7 +453,7 @@ export default async function DashboardPage({
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 text-2.5xl font-extrabold text-foreground tracking-tight leading-none">
+          <div className="mt-4 text-3xl lg:text-4xl font-black text-foreground tracking-tight leading-none">
             {totalCost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium">
@@ -469,7 +469,7 @@ export default async function DashboardPage({
               <Target className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 text-2.5xl font-extrabold text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
+          <div className="mt-4 text-3xl lg:text-4xl font-black text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
             {totalCRMConvsSuccess} đơn
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium">
@@ -485,12 +485,22 @@ export default async function DashboardPage({
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 text-2.5xl font-extrabold text-foreground tracking-tight leading-none">
+          <div className={cn(
+            "mt-4 text-3xl lg:text-4xl font-black tracking-tight leading-none",
+            cpa > 100000 ? "text-rose-500 dark:text-rose-400" : "text-foreground"
+          )}>
             CPA {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium flex justify-between items-center w-full">
             <span>Dựa trên đơn thực tế</span>
-            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-bold text-[10px]">ROAS {roas.toFixed(2)}x</span>
+            <span className={cn(
+              "px-2 py-0.5 rounded border font-bold text-[10px]",
+              roas >= 2 
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
+                : "bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20"
+            )}>
+              ROAS {roas.toFixed(2)}x
+            </span>
           </div>
         </div>
 
@@ -502,14 +512,16 @@ export default async function DashboardPage({
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
-          <div className={cn("mt-4 text-2.5xl font-extrabold tracking-tight leading-none", netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
+          <div className={cn(
+            "mt-4 text-3xl lg:text-4xl font-black tracking-tight leading-none", 
+            netProfit >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
+          )}>
             {netProfit >= 0 ? '+' : ''}{netProfit.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
           </div>
           <div className="mt-2 text-xs text-muted-foreground font-medium">
             Doanh thu CRM: <span className="font-bold text-foreground">{totalCRMRevenue.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ</span>
           </div>
         </div>
-
       </div>
 
       {/* Main HUD Layout: Chart & Activity Log */}
@@ -708,7 +720,10 @@ export default async function DashboardPage({
                         <td className="p-3.5 text-right font-mono text-rose-500 font-bold">
                           {c.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
                         </td>
-                        <td className="p-3.5 text-center font-mono font-bold text-foreground">
+                        <td className={cn(
+                          "p-3.5 text-center font-mono font-bold",
+                          c.cpa > 100000 ? "text-rose-500" : "text-foreground"
+                        )}>
                           {c.cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ <span className="text-[10px] text-muted-foreground font-medium">({c.convs} đơn)</span>
                         </td>
                         <td className="p-3.5 text-center pr-5">

@@ -150,7 +150,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NNHD Ads Manager',
+  title: 'Ads Manager',
   description: 'Google Ads Manager với AI',
 }
 

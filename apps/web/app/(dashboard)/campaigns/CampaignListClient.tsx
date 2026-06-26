@@ -407,9 +407,14 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
 
                     <td className="p-3 text-right align-middle font-mono font-medium text-foreground">{formatMoney(c.cost)}</td>
                     <td className="p-3 text-center align-middle font-bold">
-                      <span className={cn(roas < 1.5 ? 'text-rose-500' : 'text-emerald-500')}>{roas.toFixed(2)}</span>
+                      <span className={cn(roas < 2 ? 'text-rose-500' : 'text-emerald-500')}>{roas.toFixed(2)}</span>
                     </td>
-                    <td className="p-3 text-right align-middle font-mono font-semibold text-sky-600 dark:text-sky-400">{cpa > 0 ? Math.round(cpa).toLocaleString() + ' ₫' : '—'}</td>
+                    <td className={cn(
+                      "p-3 text-right align-middle font-mono font-semibold",
+                      cpa > 100000 ? "text-rose-500" : "text-sky-600 dark:text-sky-400"
+                    )}>
+                      {cpa > 0 ? Math.round(cpa).toLocaleString() + ' ₫' : '—'}
+                    </td>
                     <td className="p-3 text-center align-middle font-extrabold text-foreground">{realTotal}</td>
                     <td className="p-3 text-center align-middle text-muted-foreground font-mono">{ctr.toFixed(2)}%</td>
                     <td className="p-3 text-center align-middle text-muted-foreground font-mono">{c.clicks.toLocaleString()}</td>
