@@ -133,8 +133,11 @@ export const authConfig = {
             }
           });
 
-          // Ensure token.id remains the targetSystemUserId (no switching!)
-          token.id = targetSystemUserId;
+          // Restore all token attributes to the system user's attributes (no switching!)
+          token.id = userExists.id;
+          token.role = userExists.role || 'user';
+          token.name = userExists.username;
+          token.email = userExists.email || userExists.username;
         } else {
           // --- FLOW 2: SIGN-IN (DISABLE GOOGLE SIGN-IN) ---
           // We strictly prohibit logging in via Google if not already in a session.
