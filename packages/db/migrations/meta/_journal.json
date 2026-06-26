@@ -8,6 +8,13 @@
       "when": 1777857770714,
       "tag": "0000_slow_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1782470117611,
+      "tag": "0001_late_living_lightning",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,9 @@ export const users = pgTable("users", {
   expireAt: timestamp("expire_at"),
   mccId: varchar("mcc_id", { length: 20 }),
   lastLoginAt: timestamp("last_login_at"),
+  isVerified: boolean("is_verified").default(false),
+  verificationToken: varchar("verification_token", { length: 255 }),
+  verificationTokenExpiresAt: timestamp("verification_token_expires_at"),
   // Note: Self-reference cannot be done inline cleanly with Drizzle if it causes circular types,
   // but uuid('created_by') without .references() is safe for now, or using a foreign key constraint.
   createdBy: uuid("created_by"),

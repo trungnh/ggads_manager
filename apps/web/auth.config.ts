@@ -38,7 +38,12 @@ export const authConfig = {
           return null;
         }
 
-        // 1. Kiểm tra trạng thái tài khoản
+        // 1. Kiểm tra xác minh email
+        if (userRecord.isVerified === false) {
+          throw new Error("Tài khoản của bạn chưa được xác minh qua email. Vui lòng kích hoạt tài khoản để đăng nhập.");
+        }
+
+        // 2. Kiểm tra trạng thái tài khoản
         if (userRecord.status === 'inactive') {
           throw new Error("Tài khoản của bạn đã bị khóa");
         }
