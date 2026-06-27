@@ -363,7 +363,7 @@ export class RulesEngine {
       case 'real_roas':
         return cost > 0 ? convValue / cost : 0;
       case 'cflc_cost':
-        return cost - cfCost;
+        return cfCost;
       case 'budget_spent_pct':
         return budget > 0 ? (cost / budget) * 100 : 0;
       case 'clicks': return snapshot.clicks || 0;
