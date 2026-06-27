@@ -281,6 +281,25 @@
   html {
     @apply font-sans;
   }
+
+  /* Premium Table Global Styling */
+  thead {
+    background-color: var(--secondary) !important;
+    border-bottom: 2px solid var(--border) !important;
+  }
+  thead th {
+    color: var(--foreground) !important;
+    font-weight: 800 !important;
+  }
+  tfoot {
+    background-color: var(--muted) !important;
+    border-top: 3px double var(--border) !important;
+    border-bottom: 2px solid var(--border) !important;
+  }
+  tfoot td {
+    font-weight: 800 !important;
+    color: var(--foreground) !important;
+  }
 }
 
 /* Premium Scrollbar */
