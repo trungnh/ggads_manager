@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import { useThemeCustomizer } from '@/components/providers/ThemeProviderCustomizer'
+import { cn } from '@/lib/utils'
 
 // ── Cấu trúc nav items được tổ chức khoa học ──────────────────────
 const NAV = [
@@ -104,7 +105,12 @@ const BADGE_CLASSES: Record<string, string> = {
   amber:  'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  className?: string;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ className, onClose }: SidebarProps = {}) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const { isSidebarCollapsed, setIsSidebarCollapsed } = useThemeCustomizer()
@@ -139,9 +145,11 @@ export default function Sidebar() {
 
   return (
     <aside 
-      className={`shrink-0 h-screen bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out z-20 ${
-        isSidebarCollapsed ? 'w-[70px]' : 'w-[240px]'
-      }`}
+      className={cn(
+        "shrink-0 h-screen bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out z-20",
+        isSidebarCollapsed ? 'w-[70px]' : 'w-[240px]',
+        className
+      )}
     >
       {/* ── Header Logo ── */}
       <div className="h-[56px] px-4 flex items-center justify-between border-b border-border shrink-0">
@@ -200,6 +208,7 @@ export default function Sidebar() {
                   >
                     <Link
                       href={item.href}
+                      onClick={() => onClose?.()}
                       className={`w-full flex items-center rounded-md text-xs font-medium transition-all duration-150 ${
                         isSidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'
                       } ${
@@ -271,6 +280,7 @@ export default function Sidebar() {
         {/* User Guide */}
         <Link
           href="/guide"
+          onClick={() => onClose?.()}
           className={`flex items-center rounded-md transition-all text-xs font-medium ${
             isSidebarCollapsed ? 'justify-center py-2.5' : 'px-3 py-2 gap-3'
           } ${
@@ -290,6 +300,7 @@ export default function Sidebar() {
         {/* System Settings */}
         <Link
           href="/settings"
+          onClick={() => onClose?.()}
           className={`flex items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all text-xs font-medium ${
             isSidebarCollapsed ? 'justify-center py-2.5' : 'px-3 py-2 gap-3'
           }`}
@@ -301,7 +312,10 @@ export default function Sidebar() {
 
         {/* Logout */}
         <div 
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={() => {
+            onClose?.();
+            signOut({ callbackUrl: '/login' });
+          }}
           className={`flex items-center rounded-md text-destructive hover:bg-destructive/10 transition-all text-xs font-medium cursor-pointer ${
             isSidebarCollapsed ? 'justify-center py-2.5' : 'px-3 py-2 gap-3'
           }`}

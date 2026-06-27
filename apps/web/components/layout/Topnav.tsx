@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { Sun, Moon, Paintbrush, ChevronDown, User, LogOut, Settings, RefreshCw } from 'lucide-react'
+import { Sun, Moon, Paintbrush, ChevronDown, User, LogOut, Settings, RefreshCw, Menu } from 'lucide-react'
 import ThemeCustomizer from './ThemeCustomizer'
+import { cn } from "@/lib/utils"
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Bảng tổng quan',
@@ -28,7 +29,11 @@ const ROUTE_LABELS: Record<string, string> = {
   new: 'Tạo mới',
 }
 
-export default function Topnav() {
+interface TopnavProps {
+  onMenuClick?: () => void;
+}
+
+export default function Topnav({ onMenuClick }: TopnavProps = {}) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
@@ -97,15 +102,27 @@ export default function Topnav() {
     <header className="h-[56px] px-5 border-b border-border flex justify-between items-center bg-card/65 backdrop-blur-md shrink-0 z-10 transition-colors duration-150">
       {/* ── Breadcrumb ── */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium min-w-0">
-        <span>Hệ thống</span>
-        {breadcrumbs.map((crumb, index) => (
-          <span key={index} className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[10px] text-muted-foreground/50">/</span>
-            <span className={index === breadcrumbs.length - 1 ? "text-foreground font-semibold truncate" : "truncate"}>
-              {crumb}
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="p-1.5 -ml-1 mr-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground md:hidden cursor-pointer shrink-0"
+            title="Mở menu"
+          >
+            <Menu size={16} />
+          </button>
+        )}
+        <span className="hidden sm:inline">Hệ thống</span>
+        {breadcrumbs.map((crumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
+          return (
+            <span key={index} className={cn("items-center gap-1.5 min-w-0", isLast ? "flex" : "hidden md:flex")}>
+              <span className={cn("text-[10px] text-muted-foreground/50", isLast ? "hidden sm:inline" : "hidden md:inline")}>/</span>
+              <span className={isLast ? "text-foreground font-semibold truncate" : "truncate"}>
+                {crumb}
+              </span>
             </span>
-          </span>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Actions & Profile ── */}
