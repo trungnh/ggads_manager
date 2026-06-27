@@ -314,6 +314,7 @@ export class CampaignSyncService {
           await db.update(campaignSettings).set({
             lastConvCount: successCount,
             lastConvCostMicros: dailyCost.toString(),
+            isExcluded: false,
             updatedAt: new Date()
           }).where(and(eq(campaignSettings.customerId, customerId), eq(campaignSettings.campaignId, cId)));
         } else {
