@@ -284,11 +284,27 @@ export class CampaignSyncService {
       }
 
       if (isSyncingToday) {
-        const settings = await db.query.campaignSettings.findFirst({
+        let settings = await db.query.campaignSettings.findFirst({
           where: and(eq(campaignSettings.customerId, customerId), eq(campaignSettings.campaignId, cId))
         });
 
         const successCount = crm.real_conversions_success || 0;
+
+        if (!settings) {
+          // Initialize settings for this campaign
+          await db.insert(campaignSettings).values({
+            customerId,
+            campaignId: cId,
+            lastConvCount: successCount,
+            lastConvCostMicros: dailyCost.toString(),
+            updatedAt: new Date()
+          }).onConflictDoNothing();
+          
+          settings = await db.query.campaignSettings.findFirst({
+            where: and(eq(campaignSettings.customerId, customerId), eq(campaignSettings.campaignId, cId))
+          });
+        }
+
         const lastUpdate = settings?.updatedAt ? new Date(settings.updatedAt) : new Date(0);
         const isNewDay = lastUpdate.toISOString().split('T')[0] !== todayStr;
 

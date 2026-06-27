@@ -52,7 +52,7 @@ const NAV = [
     items: [
       { href: '/analyst',     icon: Activity,    label: 'AI Analyst' },
       { href: '/optimizer/placements', icon: Radar, label: 'Rada Diệt Kênh Rác'},
-      { href: '/optimizer',   icon: TrendingUp,  label: 'Budget Optimizer'},
+      //{ href: '/optimizer',   icon: TrendingUp,  label: 'Budget Optimizer'},
     ],
   },
   {
