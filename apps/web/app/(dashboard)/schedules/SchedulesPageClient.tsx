@@ -71,6 +71,7 @@ type Log = {
   campaignId: string | null
   actionType: string | null
   executedAt: string | null
+  metricsSnapshot?: any
 }
 
 type AdsAccount = {
@@ -96,6 +97,19 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+
+const getLogReason = (log: Log) => {
+  let summaryStr = 'Tự động thực thi hành động tối ưu hóa chiến dịch.';
+  if (log.metricsSnapshot && typeof log.metricsSnapshot === 'object') {
+    const snapObj = log.metricsSnapshot as any;
+    if (snapObj.reason) {
+      summaryStr = String(snapObj.reason);
+    } else if (snapObj.message) {
+      summaryStr = String(snapObj.message);
+    }
+  }
+  return summaryStr;
+};
 
 export default function SchedulesPageClient({
   initialSchedules,
@@ -494,44 +508,51 @@ export default function SchedulesPageClient({
                 <TableHead>Quy tắc áp dụng</TableHead>
                 <TableHead>Hành động</TableHead>
                 <TableHead>Chiến dịch tác động</TableHead>
+                <TableHead>Nguyên nhân</TableHead>
                 <TableHead>Trạng thái</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {initialLogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[var(--text-3)] italic text-xs">
+                  <TableCell colSpan={7} className="text-center py-8 text-[var(--text-3)] italic text-xs">
                     Hệ thống tự động hóa chưa chạy hoạt động nào gần đây.
                   </TableCell>
                 </TableRow>
               ) : (
-                initialLogs.map(log => (
-                  <TableRow key={log.id}>
-                    <TableCell className="font-mono text-xs text-[var(--text-2)]">
-                      {log.executedAt ? new Date(log.executedAt).toLocaleString('vi-VN') : 'N/A'}
-                    </TableCell>
-                    <TableCell className="font-semibold text-xs text-[var(--text-2)]">
-                      {accounts.find(a => a.id === log.adsAccountId)?.name || log.adsAccountId}
-                    </TableCell>
-                    <TableCell className="font-bold text-xs text-[var(--text-1)]">
-                      {log.ruleName || 'Quét tự động / Dayparting'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-[10px] font-bold rounded-[calc(var(--radius)*0.6)] border-[var(--border)] bg-[var(--bg-secondary)]">
-                        {log.actionType ? (ACTION_LABELS[log.actionType] || log.actionType) : 'Quét chỉ số'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--text-2)] truncate max-w-[200px]">
-                      {log.campaignName || log.campaignId || 'Toàn bộ tài khoản'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-emerald-500 text-white flex items-center gap-1 w-fit px-2 py-0.5 rounded-[calc(var(--radius)*0.6)] font-bold text-[9px] shadow-sm shadow-emerald-500/10">
-                        <ShieldCheck size={11} />
-                        Thành công
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
+                initialLogs.map(log => {
+                  const reason = getLogReason(log);
+                  return (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-mono text-xs text-[var(--text-2)]">
+                        {log.executedAt ? new Date(log.executedAt).toLocaleString('vi-VN') : 'N/A'}
+                      </TableCell>
+                      <TableCell className="font-semibold text-xs text-[var(--text-2)]">
+                        {accounts.find(a => a.id === log.adsAccountId)?.name || log.adsAccountId}
+                      </TableCell>
+                      <TableCell className="font-bold text-xs text-[var(--text-1)]">
+                        {log.ruleName || 'Quét tự động / Dayparting'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] font-bold rounded-[calc(var(--radius)*0.6)] border-[var(--border)] bg-[var(--bg-secondary)]">
+                          {log.actionType ? (ACTION_LABELS[log.actionType] || log.actionType) : 'Quét chỉ số'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold text-[var(--text-2)] truncate max-w-[150px]" title={log.campaignName || log.campaignId || 'Toàn bộ tài khoản'}>
+                        {log.campaignName || log.campaignId || 'Toàn bộ tài khoản'}
+                      </TableCell>
+                      <TableCell className="text-xs text-[var(--text-3)] max-w-[250px] truncate" title={reason}>
+                        {reason}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-emerald-500 text-white flex items-center gap-1 w-fit px-2 py-0.5 rounded-[calc(var(--radius)*0.6)] font-bold text-[9px] shadow-sm shadow-emerald-500/10">
+                          <ShieldCheck size={11} />
+                          Thành công
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
