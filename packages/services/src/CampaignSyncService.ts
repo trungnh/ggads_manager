@@ -288,7 +288,7 @@ export class CampaignSyncService {
           where: and(eq(campaignSettings.customerId, customerId), eq(campaignSettings.campaignId, cId))
         });
 
-        const successCount = crm.real_conversions_success || 0;
+        const successCount = crm.real_conversions || 0;
 
         if (!settings) {
           // Initialize settings for this campaign
