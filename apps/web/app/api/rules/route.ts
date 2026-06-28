@@ -84,7 +84,7 @@ export async function POST(request: Request) {
             actionType: a.actionType ? a.actionType.trim() : "",
             actionValue: (a.actionValue !== undefined && a.actionValue !== null && a.actionValue !== "") ? a.actionValue.toString() : null,
             alertMessage: a.alertMessage,
-            telegramConnectionId: a.telegramConnectionId
+            telegramConnectionId: (a.telegramConnectionId && a.telegramConnectionId !== "") ? a.telegramConnectionId : null
           }))
         );
       }
