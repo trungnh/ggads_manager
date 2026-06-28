@@ -45,8 +45,8 @@ export async function PUT(
             conditionGroup: c.conditionGroup || 0,
             metric: c.metric ? c.metric.trim() : "",
             operator: c.operator ? c.operator.trim() : "",
-            value: c.value.toString(),
-            valueMax: c.valueMax?.toString(),
+            value: (c.value !== undefined && c.value !== null && c.value !== "") ? c.value.toString() : "0",
+            valueMax: (c.valueMax !== undefined && c.valueMax !== null && c.valueMax !== "") ? c.valueMax.toString() : null,
             sortOrder: c.sortOrder || 0
           }))
         );
@@ -60,7 +60,7 @@ export async function PUT(
             ruleId: id,
             actionOrder: a.actionOrder || 0,
             actionType: a.actionType ? a.actionType.trim() : "",
-            actionValue: a.actionValue?.toString(),
+            actionValue: (a.actionValue !== undefined && a.actionValue !== null && a.actionValue !== "") ? a.actionValue.toString() : null,
             alertMessage: a.alertMessage,
             telegramConnectionId: a.telegramConnectionId
           }))
