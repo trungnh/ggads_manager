@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db, campaignSettings, adsAccounts } from "@repo/db";
+import { db, campaignSettings, adsAccounts, campaignsSnapshot } from "@repo/db";
 import { CampaignsService } from "@repo/google-ads";
 import { eq, and } from "drizzle-orm";
 
@@ -31,22 +31,49 @@ export async function PATCH(request: Request) {
 
     const campaignsService = new CampaignsService(acc.oauthConnectionId, customerId, acc.loginCustomerId || undefined);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
     switch (type) {
       case 'budget':
         // Update Google Ads
         await campaignsService.updateCampaignBudget(campaignId, value.toString());
-        // No local DB update needed here as the next sync will pick it up, 
-        // but for immediate feedback we can update settings or just return success.
+        // Immediately reflect in local DB snapshot for today
+        await db.update(campaignsSnapshot).set({
+          budgetMicros: value.toString(),
+          updatedAt: new Date()
+        }).where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          eq(campaignsSnapshot.campaignId, campaignId),
+          eq(campaignsSnapshot.date, todayStr)
+        ));
         break;
 
       case 'target_cpa':
         // Update Google Ads
         await campaignsService.updateCampaignTargetCpa(campaignId, value.toString());
+        // Immediately reflect in local DB snapshot for today
+        await db.update(campaignsSnapshot).set({
+          targetCpaMicros: value.toString(),
+          updatedAt: new Date()
+        }).where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          eq(campaignsSnapshot.campaignId, campaignId),
+          eq(campaignsSnapshot.date, todayStr)
+        ));
         break;
 
       case 'status':
         // Update Google Ads (ENABLED, PAUSED)
         await campaignsService.updateCampaignStatus(campaignId, value);
+        // Immediately reflect in local DB snapshot for today
+        await db.update(campaignsSnapshot).set({
+          status: value,
+          updatedAt: new Date()
+        }).where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          eq(campaignsSnapshot.campaignId, campaignId),
+          eq(campaignsSnapshot.date, todayStr)
+        ));
         break;
 
       case 'is_excluded':
@@ -61,7 +88,7 @@ export async function PATCH(request: Request) {
       case 'cflc_reset':
       case 'cflc_override': {
         const { currentCost, currentConversions } = body;
-        const inputCflcMicros = type === 'cflc_reset' ? BigInt(0) : BigInt(Math.round(parseFloat(value) * 1000000));
+        const inputCflcMicros = type === 'cflc_reset' ? BigInt(0) : BigInt(value.toString());
         const impliedCheckpoint = BigInt(currentCost || '0') - inputCflcMicros;
         
         await db.insert(campaignSettings).values({
@@ -78,6 +105,16 @@ export async function PATCH(request: Request) {
             updatedAt: new Date() 
           }
         });
+
+        // Immediately reflect in local DB snapshot for today
+        await db.update(campaignsSnapshot).set({
+          cfCostMicros: inputCflcMicros.toString(),
+          updatedAt: new Date()
+        }).where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          eq(campaignsSnapshot.campaignId, campaignId),
+          eq(campaignsSnapshot.date, todayStr)
+        ));
         break;
       }
 
