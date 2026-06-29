@@ -102,11 +102,11 @@ export default function EditRulePage({ params }: { params: Promise<{ id: string 
           conditionGroup: c.conditionGroup,
           metric: c.metric,
           operator: c.operator,
-          value: c.value || ''
+          value: (c.value !== null && c.value !== undefined) ? c.value.toString() : ''
         })))
         setActions(rule.actions.map((a: any) => ({
           actionType: a.actionType,
-          actionValue: a.actionValue || '',
+          actionValue: (a.actionValue !== null && a.actionValue !== undefined) ? a.actionValue.toString() : '',
           alertMessage: a.alertMessage || '',
           telegramConnectionId: a.telegramConnectionId || ''
         })))
