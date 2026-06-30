@@ -35,7 +35,7 @@ export class RulesEngine {
     }
 
     // 2. Fetch today's campaign snapshots
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     const snapshots = await db.select()
       .from(campaignsSnapshot)
       .where(and(
@@ -224,7 +224,7 @@ export class RulesEngine {
 
     // Check max executions per day
     if (schedule.maxExecutionsPerDay) {
-      const today = now.toISOString().split('T')[0];
+      const today = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       if (rule.executionsTodayDate === today && typeof rule.executionsTodayCount === 'number' && rule.executionsTodayCount >= schedule.maxExecutionsPerDay) {
         console.log(`[RULE_ENGINE] Rule ${rule.name} skipped: Max executions reached (${rule.executionsTodayCount})`);
         return false;

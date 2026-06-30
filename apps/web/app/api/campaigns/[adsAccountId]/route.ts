@@ -56,7 +56,7 @@ export async function GET(
 
   // 2. Fallback: Fetch from DB snapshots using customerId
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     
     // Fetch latest snapshots for this account
     // We use today's date if possible, otherwise just the latest available

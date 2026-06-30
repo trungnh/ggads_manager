@@ -8,10 +8,12 @@ export class ScheduleEngine {
    */
   static async executeAllSchedules(mockMode: boolean = true) {
     const now = new Date();
-    // Get current time in HH:MM format
-    const hours = String(now.getHours()).padStart(2, '0');
+    // Get current Vietnam time in HH:mm format
+    const vnTimeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
+    const [hours, rawMinStr] = vnTimeStr.split(':');
+    const rawMinutes = parseInt(rawMinStr, 10);
     // Round minutes to nearest 5 for strict 5-min intervals
-    const roundedMinutes = Math.floor(now.getMinutes() / 5) * 5;
+    const roundedMinutes = Math.floor(rawMinutes / 5) * 5;
     const minutes = String(roundedMinutes).padStart(2, '0');
     const currentTimeStr = `${hours}:${minutes}`;
 
@@ -99,8 +101,9 @@ export class ScheduleEngine {
     }
 
     // Update last executed date
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     await db.update(campaignSchedules)
-      .set({ lastExecutedDate: new Date().toISOString().split('T')[0], updatedAt: new Date() })
+      .set({ lastExecutedDate: todayStr, updatedAt: new Date() })
       .where(eq(campaignSchedules.id, schedule.id));
       
     console.log(`[SCHEDULE_ENGINE] Completed schedule: "${schedule.name}".`);

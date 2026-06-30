@@ -20,7 +20,7 @@ export default async function CampaignDetailsPage({
     redirect("/login");
   }
 
-  const defaultDate = new Date().toISOString().split('T')[0];
+  const defaultDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
   const start = startDate || defaultDate;
   const end = endDate || start;
   

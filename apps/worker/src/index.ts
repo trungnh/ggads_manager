@@ -262,7 +262,7 @@ async function runAutoCampaignSync() {
       return;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     for (const account of activeAccounts) {
       try {
@@ -425,7 +425,7 @@ budgetOptimizationWorker.on('failed', (job, err) => {
 
 async function runStagedRolloutSteps() {
   console.log(`[Worker] Running Staged Rollout steps checker...`);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   // Fetch in-progress done optimizations
   const activeOpts = await db.select()
@@ -499,7 +499,7 @@ async function runStagedRolloutSteps() {
 
 async function runSafetyBreakerChecks() {
   console.log(`[Worker] Running Safety Breaker checks...`);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   const activeOpts = await db.select()
     .from(budgetOptimizations)

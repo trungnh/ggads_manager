@@ -74,7 +74,7 @@ export class CampaignsService {
   }
 
   async getCampaignsToday(): Promise<CampaignRawData[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     return this.getCampaignsForDate(today);
   }
 

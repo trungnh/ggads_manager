@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, mode: 'discovery', count });
     }
 
-    const syncDate = dateStr || new Date().toISOString().split('T')[0];
+    const syncDate = dateStr || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     // Trigger sync service for a specific account
     await CampaignSyncService.syncCampaigns(session.user.id, adsAccountId, customerId, syncDate);

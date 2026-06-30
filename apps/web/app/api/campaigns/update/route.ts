@@ -31,7 +31,7 @@ export async function PATCH(request: Request) {
 
     const campaignsService = new CampaignsService(acc.oauthConnectionId, customerId, acc.loginCustomerId || undefined);
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     switch (type) {
       case 'budget':

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
   }
 
-  const start = startDate || new Date().toISOString().split('T')[0];
+  const start = startDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
   const end = endDate || start;
 
   try {

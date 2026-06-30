@@ -263,7 +263,7 @@ export class CampaignSyncService {
     }
 
     // 4. Calculate CFLC (Cost From Last Conversion) - High Precision Checkpoint
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     const isSyncingToday = dateStr === todayStr;
 
     for (const [cId, raw] of idMap.entries()) {

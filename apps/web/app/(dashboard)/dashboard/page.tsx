@@ -103,7 +103,7 @@ export default async function DashboardPage({
 
   const distinctDates = distinctDatesResult.map(d => d.date);
 
-  const actualTodayDate = new Date().toISOString().split('T')[0]; // "2026-06-01"
+  const actualTodayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // "2026-06-01"
   const dateParam = resolvedSearchParams.date || "today";
   const selectedAccountId = resolvedSearchParams.accountId || "all";
 
