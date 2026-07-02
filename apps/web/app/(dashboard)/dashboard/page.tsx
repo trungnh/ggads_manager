@@ -40,6 +40,35 @@ import {
   TrendingDown
 } from "lucide-react";
 
+function renderSparkline(values: number[], color: string = '#3B82F6') {
+  if (!values || values.length < 2) {
+    return (
+      <div className="w-16 h-4 bg-muted/40 rounded animate-pulse" />
+    );
+  }
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+  const height = 16;
+  const width = 80;
+  const points = values.map((val, idx) => {
+    const x = (idx / (values.length - 1)) * width;
+    const y = height - ((val - min) / range) * height;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  return (
+    <svg className="w-20 h-4 opacity-80" viewBox={`0 0 ${width} ${height}`}>
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        points={points}
+      />
+    </svg>
+  );
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -238,7 +267,9 @@ export default async function DashboardPage({
         date: `${d}/${m}`,
         cost: costSum,
         leads: convsSum,
-        roas: roas
+        roas: roas,
+        rev: revSum,
+        profit: revSum - costSum
       };
     });
   }
@@ -443,83 +474,128 @@ export default async function DashboardPage({
         />
       </div>
 
-      {/* KPI Cards Grid - Real data populated */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Spend vs Daily Budget sum */}
-        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
-          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Chi tiêu ads / Ngân sách</span>
-            <div className="p-1.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-4 text-3xl lg:text-3xl font-black text-foreground tracking-tight leading-none">
-            {totalCost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground font-medium">
-            Đã chi <span className="text-emerald-500 dark:text-emerald-400 font-bold">{budgetSpentPct.toFixed(1)}%</span> ngân sách ({monthlyBudgetGoal.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ)
-          </div>
-        </div>
-
-        {/* Card 2: CRM conversions count */}
-        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
-          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Đơn hàng crm (Thực tế)</span>
-            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Target className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-4 text-3xl lg:text-3xl font-black text-emerald-500 dark:text-emerald-400 tracking-tight leading-none">
-            {totalCRMConvsSuccess} đơn
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground font-medium">
-            Google báo cáo: <span className="font-bold text-foreground">{Math.round(totalGoogleConvs)} đơn</span>
+      {/* KPI Global Stats Panel - Rebranded to Etraverse Central Admin */}
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-6">
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-xs font-bold text-foreground uppercase tracking-widest opacity-80">
+            CHỈ SỐ HỆ THỐNG (GLOBAL STATS)
+          </span>
+          <div className="flex gap-1.5 bg-secondary/50 p-1 rounded-lg border border-border">
+            {['7D', '15D', '30D'].map((range) => {
+              const isActive = (range === '7D' && dateParam === '7days') ||
+                               (range === '15D' && dateParam === '15days') ||
+                               (range === '30D' && dateParam === '30days') ||
+                               (range === '7D' && (dateParam === 'today' || dateParam === 'yesterday'));
+              return (
+                <span 
+                  key={range}
+                  className={cn(
+                    "text-[10px] font-bold px-2.5 py-1 rounded-md cursor-pointer transition-all",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {range}
+                </span>
+              );
+            })}
           </div>
         </div>
 
-        {/* Card 3: CPA vs ROAS */}
-        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
-          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>CPA / ROAS (CRM thực tế)</span>
-            <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Activity className="w-4 h-4" />
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 divide-y md:divide-y-0 md:divide-x divide-border">
+          {/* Column 1: Cost */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Chi tiêu / Ngân sách</span>
+              <span className="text-[9px] font-extrabold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                {budgetSpentPct.toFixed(1)}%
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black text-foreground tracking-tight">
+              {totalCost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">Mục tiêu: {monthlyBudgetGoal.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ</span>
+              {renderSparkline(chartData.map(d => d.cost), '#3B82F6')}
             </div>
           </div>
-          <div className={cn(
-            "mt-4 text-3xl lg:text-3xl font-black tracking-tight leading-none",
-            cpa > 100000 ? "text-rose-500 dark:text-rose-400" : "text-foreground"
-          )}>
-            {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+
+          {/* Column 2: Conversions */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Đơn hàng CRM</span>
+              <span className="text-[9px] font-extrabold text-sky-500 bg-sky-500/10 px-1.5 py-0.5 rounded-full border border-sky-500/20">
+                Thành công
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black text-foreground tracking-tight text-emerald-500 dark:text-emerald-400">
+              {totalCRMConvsSuccess} đơn
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">GG báo cáo: {Math.round(totalGoogleConvs)}</span>
+              {renderSparkline(chartData.map(d => d.leads), '#10B981')}
+            </div>
           </div>
-          <div className="mt-2 text-xs text-muted-foreground font-medium flex justify-between items-center w-full">
-            <span>Dựa trên đơn thực tế</span>
-            <span className={cn(
-              "px-2 py-0.5 rounded border font-bold text-xl",
-              roas >= 2 
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
-                : "bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20"
+
+          {/* Column 3: CPA */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">CPA thực tế</span>
+              <span className={cn(
+                "text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border",
+                cpa > 100000 ? "bg-rose-500/10 text-rose-500 border-rose-500/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+              )}>
+                CPA
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black text-foreground tracking-tight">
+              {cpa.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">Mỗi đơn CRM</span>
+              {renderSparkline(chartData.map(d => d.leads > 0 ? d.cost / d.leads : 0), '#F59E0B')}
+            </div>
+          </div>
+
+          {/* Column 4: Revenue */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Doanh thu CRM</span>
+              <span className="text-[9px] font-extrabold text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded-full border border-indigo-500/20">
+                Pancake
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black text-foreground tracking-tight">
+              {totalCRMRevenue.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">Doanh số thực tế</span>
+              {renderSparkline(chartData.map(d => d.rev), '#6366F1')}
+            </div>
+          </div>
+
+          {/* Column 5: Net Profit */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Lợi nhuận ròng</span>
+              <span className={cn(
+                "text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border",
+                netProfit >= 0 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+              )}>
+                Net Profit
+              </span>
+            </div>
+            <div className={cn(
+              "mt-2 text-2xl font-black tracking-tight",
+              netProfit >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
             )}>
-              ROAS {roas.toFixed(2)}x
-            </span>
-          </div>
-        </div>
-
-        {/* Card 4: Net profit */}
-        <div className="bg-card text-card-foreground p-6 rounded-[var(--radius)] border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200">
-          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Lợi nhuận nét dự tính</span>
-            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 animate-pulse">
-              <Sparkles className="w-4 h-4" />
+              {netProfit >= 0 ? '+' : ''}{netProfit.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
             </div>
-          </div>
-          <div className={cn(
-            "mt-4 text-3xl lg:text-3xl font-black tracking-tight leading-none", 
-            netProfit >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-          )}>
-            {netProfit >= 0 ? '+' : ''}{netProfit.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground font-medium">
-            Doanh thu CRM: <span className="font-bold text-foreground">{totalCRMRevenue.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ</span>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">Cắt lỗ / Lợi nhuận</span>
+              {renderSparkline(chartData.map(d => d.profit), netProfit >= 0 ? '#10B981' : '#F43F5E')}
+            </div>
           </div>
         </div>
       </div>

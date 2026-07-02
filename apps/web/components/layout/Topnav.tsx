@@ -99,30 +99,26 @@ export default function Topnav({ onMenuClick }: TopnavProps = {}) {
   const firstLetter = username.charAt(0).toUpperCase()
 
   return (
-    <header className="h-[56px] px-5 border-b border-border flex justify-between items-center bg-card/65 backdrop-blur-md shrink-0 z-10 transition-colors duration-150">
-      {/* ── Breadcrumb ── */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium min-w-0">
+    <header className="h-[64px] px-5 border-b border-border flex justify-between items-center bg-card/65 backdrop-blur-md shrink-0 z-10 transition-colors duration-150">
+      {/* ── Page Title & Greeting ── */}
+      <div className="flex items-center gap-3 min-w-0">
         {onMenuClick && (
           <button
             onClick={onMenuClick}
             className="p-1.5 -ml-1 mr-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground md:hidden cursor-pointer shrink-0"
             title="Mở menu"
           >
-            <Menu size={16} />
+            <Menu size={18} />
           </button>
         )}
-        <span className="hidden sm:inline">Hệ thống</span>
-        {breadcrumbs.map((crumb, index) => {
-          const isLast = index === breadcrumbs.length - 1;
-          return (
-            <span key={index} className={cn("items-center gap-1.5 min-w-0", isLast ? "flex" : "hidden md:flex")}>
-              <span className={cn("text-[10px] text-muted-foreground/50", isLast ? "hidden sm:inline" : "hidden md:inline")}>/</span>
-              <span className={isLast ? "text-foreground font-semibold truncate" : "truncate"}>
-                {crumb}
-              </span>
-            </span>
-          );
-        })}
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-sm md:text-base font-extrabold text-foreground tracking-tight truncate uppercase">
+            {breadcrumbs[breadcrumbs.length - 1] || 'Hệ thống'}
+          </h1>
+          <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
+            Xin chào, {username.split('@')[0]} 👋
+          </span>
+        </div>
       </div>
 
       {/* ── Actions & Profile ── */}

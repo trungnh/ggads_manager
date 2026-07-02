@@ -242,24 +242,57 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Tổng chi tiêu', value: formatMoney(totals.cost), icon: DollarSign, colorClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },
-          { label: 'Tổng chuyển đổi', value: totals.realConversions.toLocaleString() + ' đơn', icon: Target, colorClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-          { label: 'CPA bình quân', value: (totals.realConversions > 0 ? formatMoney(totals.cost / totals.realConversions) : '—'), icon: Activity, colorClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-          { label: 'ROAS bình quân', value: (totals.cost > 0 ? (totals.value / totals.cost).toFixed(2) + '×' : '0.00×'), icon: TrendingUp, colorClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-card text-card-foreground p-5 rounded-[var(--radius)] border border-border shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200">
-            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", stat.colorClass)}>
-              <stat.icon size={18} />
+      {/* Stats Overview Rebranded to Etraverse Central Admin */}
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          {/* Column 1: Cost */}
+          <div className="flex items-center gap-4 pt-4 sm:pt-0 sm:pl-0">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-sky-500/10 text-sky-500 dark:text-sky-400">
+              <DollarSign size={18} />
             </div>
             <div>
-              <div className="text-[11px] font-medium text-muted-foreground">{stat.label}</div>
-              <div className="text-base font-extrabold text-foreground tracking-tight leading-none mt-1.5">{stat.value}</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tổng chi tiêu</div>
+              <div className="text-lg font-black text-foreground tracking-tight mt-1">{formatMoney(totals.cost)}</div>
             </div>
           </div>
-        ))}
+
+          {/* Column 2: Conversions */}
+          <div className="flex items-center gap-4 pt-4 sm:pt-0 sm:pl-6">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">
+              <Target size={18} />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tổng chuyển đổi</div>
+              <div className="text-lg font-black text-foreground tracking-tight mt-1">{totals.realConversions.toLocaleString()} đơn</div>
+            </div>
+          </div>
+
+          {/* Column 3: CPA */}
+          <div className="flex items-center gap-4 pt-4 sm:pt-0 sm:pl-6">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-500 dark:text-amber-400">
+              <Activity size={18} />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">CPA bình quân</div>
+              <div className="text-lg font-black text-foreground tracking-tight mt-1">
+                {totals.realConversions > 0 ? formatMoney(totals.cost / totals.realConversions) : '—'}
+              </div>
+            </div>
+          </div>
+
+          {/* Column 4: ROAS */}
+          <div className="flex items-center gap-4 pt-4 sm:pt-0 sm:pl-6">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+              <TrendingUp size={18} />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ROAS bình quân</div>
+              <div className="text-lg font-black text-foreground tracking-tight mt-1">
+                {totals.cost > 0 ? (totals.value / totals.cost).toFixed(2) + '×' : '0.00×'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Toolbar */}

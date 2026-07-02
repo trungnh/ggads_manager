@@ -10,14 +10,21 @@ async function createAdmin() {
 
   try {
     const passwordHash = await bcrypt.hash(password, 10);
-
     const newUser = await db.insert(users).values({
       username,
       email,
       passwordHash,
       role: "superadmin",
       status: "active",
-    }).onConflictDoNothing().returning();
+      isVerified: true,
+    }).onConflictDoUpdate({
+      target: users.username,
+      set: {
+        isVerified: true,
+        status: "active",
+        role: "superadmin"
+      }
+    }).returning();
 
     if (newUser.length > 0) {
       console.log("✅ Admin user created successfully!");
