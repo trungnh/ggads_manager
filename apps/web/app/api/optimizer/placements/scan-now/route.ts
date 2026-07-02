@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { accountId, datePreset, customStartDate, customEndDate, productContext, aiProvider } = await req.json();
+    const { accountId, datePreset, customStartDate, customEndDate, productContext, aiProvider, aiModel } = await req.json();
 
     if (!accountId) {
       return NextResponse.json({ error: "accountId is required" }, { status: 400 });
@@ -75,12 +75,14 @@ export async function POST(req: NextRequest) {
     }
 
     const finalProvider = activeConnection.provider;
-    // Define standard model based on provider
-    const model = finalProvider === "gemini-pro" 
-      ? "gemini-2.5-pro" 
-      : finalProvider === "openai" 
-        ? "gpt-4o-mini" 
-        : "gemini-3.1-flash";
+    let model = aiModel;
+    if (!model) {
+      model = finalProvider === "gemini-pro" 
+        ? "gemini-2.5-pro" 
+        : finalProvider === "openai" 
+          ? "gpt-4o-mini" 
+          : "gemini-2.5-flash";
+    }
 
     // 3. Query REAL placement performance data from Google Ads API
     let rawPlacements = [];

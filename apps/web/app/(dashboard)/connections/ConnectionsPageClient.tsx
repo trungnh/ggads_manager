@@ -555,7 +555,7 @@ export default function ConnectionsPageClient({
                       
                       <div className="space-y-1">
                         <h3 className="text-sm font-bold text-[var(--text-1)] truncate">
-                          {conn.provider === 'gemini' ? 'Gemini 3.1 Flash' : conn.provider === 'gemini-pro' ? 'Gemini 2.5 Pro' : 'OpenAI GPT-4o'}
+                          {conn.provider === 'gemini' ? 'Gemini 2.5 / 3.5 Flash' : conn.provider === 'gemini-pro' ? 'Gemini 2.5 Pro' : 'OpenAI GPT-4o'}
                         </h3>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-[calc(var(--radius)*0.4)] bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400">
@@ -622,7 +622,7 @@ export default function ConnectionsPageClient({
                       </Badge>
                     </div>
                     <CardTitle className="text-lg font-bold text-[var(--text-1)] mt-4">
-                      Gemini 3.1 / 3.5 Flash
+                      Gemini 2.5 / 3.5 Flash
                     </CardTitle>
                     <CardDescription className="text-[var(--text-3)] mt-1.5 text-xs leading-relaxed">
                       Siêu tốc độ, cực kỳ tiết kiệm chi phí. Model hoàn hảo chuyên biệt dành cho quét hàng loạt kênh rác ở Rada.

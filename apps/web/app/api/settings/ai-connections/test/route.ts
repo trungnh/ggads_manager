@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       // List of candidate models to try in sequence for robustness
       const candidates = provider === "gemini-pro" 
         ? ["gemini-2.5-pro", "gemini-3.1-pro-preview", "gemini-pro"]
-        : ["gemini-3.1-flash", "gemini-3.5-flash"];
+        : ["gemini-2.5-flash", "gemini-3.5-flash"];
 
       let lastError = "";
       let success = false;

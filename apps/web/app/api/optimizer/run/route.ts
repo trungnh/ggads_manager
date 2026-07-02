@@ -127,7 +127,7 @@ export async function POST(req: Request) {
       const apiKey = decrypt(activeConnection.apiKey);
       if (apiKey) {
         try {
-          const model = isPro ? "gemini-2.5-pro" : "gemini-3.1-flash";
+          const model = isPro ? "gemini-2.5-pro" : "gemini-2.5-flash";
           const prompt = `Bạn là chuyên gia cố vấn tối ưu hóa quảng cáo Google Ads kết hợp Pancake CRM tại Việt Nam.
 Dựa trên kết quả tối ưu hóa ngân sách của thuật toán Marginal CPA dưới đây, hãy viết một báo cáo phân tích chiến lược bằng tiếng Việt:
 

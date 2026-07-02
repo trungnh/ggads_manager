@@ -72,7 +72,7 @@ export default function PlacementExcluderPage() {
 
   // AI Connection selection state
   const [aiConnections, setAiConnections] = useState<any[]>([]);
-  const [selectedAiProvider, setSelectedAiProvider] = useState<string>("gemini");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash");
 
   // Heuristics states
   const [cpaThreshold, setCpaThreshold] = useState<number>(250000);
@@ -192,7 +192,14 @@ export default function PlacementExcluderPage() {
           const activeConns = list.filter((c: any) => c.hasKey);
           setAiConnections(activeConns);
           if (activeConns.length > 0) {
-            setSelectedAiProvider(activeConns[0].provider);
+            const first = activeConns[0].provider;
+            if (first === "gemini") {
+              setSelectedModel("gemini-2.5-flash");
+            } else if (first === "gemini-pro") {
+              setSelectedModel("gemini-2.5-pro");
+            } else if (first === "openai") {
+              setSelectedModel("gpt-4o-mini");
+            }
           }
         }
       } catch (e) {
@@ -230,6 +237,15 @@ export default function PlacementExcluderPage() {
     setIsScanning(true);
     setScanMessage("");
     setScanError("");
+
+    // Resolve provider name based on selectedModel value
+    let provider = "gemini";
+    if (selectedModel === "gemini-2.5-pro") {
+      provider = "gemini-pro";
+    } else if (selectedModel === "gpt-4o-mini") {
+      provider = "openai";
+    }
+
     try {
       const res = await fetch("/api/optimizer/placements/scan-now", {
         method: "POST",
@@ -240,7 +256,8 @@ export default function PlacementExcluderPage() {
           customStartDate: datePreset === "CUSTOM" ? customStartDate : undefined,
           customEndDate: datePreset === "CUSTOM" ? customEndDate : undefined,
           productContext,
-          aiProvider: selectedAiProvider
+          aiProvider: provider,
+          aiModel: selectedModel
         })
       });
       const data = await res.json();
@@ -391,18 +408,35 @@ export default function PlacementExcluderPage() {
           {/* AI Provider Selector Dropdown */}
           <div className="relative">
             <select
-              value={selectedAiProvider}
-              onChange={(e) => setSelectedAiProvider(e.target.value)}
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
               className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-2 text-sm text-[var(--text-1)] focus:outline-none focus:border-emerald-500 appearance-none pr-10 cursor-pointer font-medium transition duration-200"
             >
               {aiConnections.length === 0 ? (
-                <option value="gemini">Gemini 3.1 Flash (Mặc định)</option>
+                <>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Mặc định)</option>
+                  <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                </>
               ) : (
-                aiConnections.map(conn => (
-                  <option key={conn.provider} value={conn.provider}>
-                    {conn.provider === 'gemini' ? 'Gemini 3.1 Flash' : conn.provider === 'gemini-pro' ? 'Gemini 2.5 Pro' : 'OpenAI (GPT-4o-mini)'}
-                  </option>
-                ))
+                aiConnections.flatMap(conn => {
+                  if (conn.provider === 'gemini') {
+                    return [
+                      <option key="gemini-2.5-flash" value="gemini-2.5-flash">Gemini 2.5 Flash</option>,
+                      <option key="gemini-3.5-flash" value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                    ];
+                  }
+                  if (conn.provider === 'gemini-pro') {
+                    return [
+                      <option key="gemini-2.5-pro" value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    ];
+                  }
+                  if (conn.provider === 'openai') {
+                    return [
+                      <option key="gpt-4o-mini" value="gpt-4o-mini">OpenAI GPT-4o-mini</option>
+                    ];
+                  }
+                  return [];
+                })
               )}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-3)] pointer-events-none" />
