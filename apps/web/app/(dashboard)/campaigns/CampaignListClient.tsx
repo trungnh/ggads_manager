@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Settings, Calendar, RefreshCw, ChevronDown, 
@@ -63,6 +63,11 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
   const [editingBudget, setEditingBudget] = useState<{ id: string, value: string } | null>(null)
   const [editingCpa, setEditingCpa] = useState<{ id: string, value: string } | null>(null)
   const [editingCflc, setEditingCflc] = useState<{ id: string, value: string } | null>(null)
+
+  // Synchronize state when server returns new data (e.g. on date selection change)
+  useEffect(() => {
+    setCampaigns(initialCampaigns)
+  }, [initialCampaigns])
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(c => {
