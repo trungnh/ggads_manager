@@ -321,6 +321,7 @@ export default async function DashboardPage({
     cost: number;
     convs: number;
     rev: number;
+    customerId: string;
   }> = {};
 
   for (const snap of snapshots) {
@@ -336,7 +337,8 @@ export default async function DashboardPage({
         status: snap.status || "PAUSED",
         cost: 0,
         convs: 0,
-        rev: 0
+        rev: 0,
+        customerId: snap.customerId || ""
       };
     }
     campaignAgg[cId].cost += cost;
@@ -348,6 +350,40 @@ export default async function DashboardPage({
   }
 
   const aggregatedCampaigns = Object.values(campaignAgg);
+
+  // Aggregate account statistics from snapshots
+  const accountStatsMap: Record<string, {
+    customerId: string;
+    name: string;
+    cost: number;
+    convs: number;
+    rev: number;
+  }> = {};
+
+  for (const acc of accounts) {
+    accountStatsMap[acc.customerId] = {
+      customerId: acc.customerId,
+      name: acc.name || "Tài khoản không tên",
+      cost: 0,
+      convs: 0,
+      rev: 0
+    };
+  }
+
+  for (const snap of snapshots) {
+    const cId = snap.customerId;
+    if (accountStatsMap[cId]) {
+      const cost = Number(snap.costMicros || 0) / 1000000;
+      const convs = snap.realConversions || 0;
+      const rev = Number(snap.realConversionValueSuccessMicros || 0) / 1000000;
+
+      accountStatsMap[cId].cost += cost;
+      accountStatsMap[cId].convs += convs;
+      accountStatsMap[cId].rev += rev;
+    }
+  }
+
+  const accountStatsList = Object.values(accountStatsMap);
 
   // List A: Top Chiến Dịch Hiệu Quả Nhất
   const topEfficientCampaigns = aggregatedCampaigns
@@ -615,6 +651,83 @@ export default async function DashboardPage({
 
       </div>
 
+      {/* Account Breakdown Table - Etraverse Central Admin Style */}
+      <div className="bg-card text-card-foreground border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-border flex justify-between items-center bg-muted/20">
+          <h2 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+            📊 HIỆU SUẤT CHI TIẾT TỪNG TÀI KHOẢN
+          </h2>
+          <span className="text-[10px] text-muted-foreground font-semibold">
+            Tổng số: {accountStatsList.length} tài khoản
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-muted/40 border-b border-border text-muted-foreground font-bold font-sans">
+              <tr>
+                <th className="p-4 pl-5">Tài khoản</th>
+                <th className="p-4 text-right">Chi tiêu</th>
+                <th className="p-4 text-center">CRM Đơn</th>
+                <th className="p-4 text-right">CPA</th>
+                <th className="p-4 text-center">ROAS</th>
+                <th className="p-4 text-right pr-5">Doanh thu</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {accountStatsList.map(acc => {
+                const cpaVal = acc.convs > 0 ? acc.cost / acc.convs : 0;
+                const roasVal = acc.cost > 0 ? acc.rev / acc.cost : 0;
+
+                return (
+                  <tr key={acc.customerId} className="hover:bg-muted/10 transition duration-150">
+                    <td className="p-4 pl-5">
+                      <Link 
+                        href={`/campaigns/${acc.customerId}`}
+                        className="font-bold text-foreground hover:text-primary transition flex flex-col gap-0.5"
+                      >
+                        <span>{acc.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono font-medium">ID: {acc.customerId}</span>
+                      </Link>
+                    </td>
+                    <td className="p-4 text-right font-mono text-foreground font-medium">
+                      {acc.cost.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-md font-extrabold font-mono text-[10px]">
+                        {acc.convs} đơn
+                      </span>
+                    </td>
+                    <td className={cn(
+                      "p-4 text-right font-mono font-semibold",
+                      cpaVal > 100000 ? "text-rose-500" : "text-[var(--text-1)]"
+                    )}>
+                      {cpaVal > 0 ? `${Math.round(cpaVal).toLocaleString("vi-VN")}đ` : "—"}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded border font-bold text-xs font-mono",
+                        roasVal >= 2 
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
+                          : roasVal > 0 
+                            ? "bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20"
+                            : "bg-muted text-muted-foreground border-border"
+                      )}>
+                        {roasVal > 0 ? `${roasVal.toFixed(2)}x` : "0.00x"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right font-mono font-bold text-emerald-500 pr-5">
+                      {acc.rev.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}đ
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Bottom Campaign Grids (Requested specific sections) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         
@@ -649,7 +762,13 @@ export default async function DashboardPage({
                       <tr key={c.id} className="hover:bg-muted/10 transition duration-150">
                         <td className="p-3.5 pl-5">
                           <div className="font-bold text-foreground text-xs flex items-center gap-1.5 flex-wrap">
-                            <span className="truncate max-w-[150px]" title={c.name}>{c.name}</span>
+                            <Link 
+                              href={`/campaigns/${c.customerId}?id=${c.id}`}
+                              className="truncate max-w-[150px] hover:text-primary transition"
+                              title={c.name}
+                            >
+                              {c.name}
+                            </Link>
                             <span className={cn(
                               "text-[8px] font-bold px-1.5 py-0.5 rounded-full border shrink-0",
                               c.status === 'ENABLED' 
@@ -732,7 +851,7 @@ export default async function DashboardPage({
                         </td>
                         <td className="p-3.5 text-center pr-5">
                           <Link 
-                            href={`/campaigns?id=${c.id}`}
+                            href={`/campaigns/${c.customerId}?id=${c.id}`}
                             className="inline-flex items-center justify-center px-3 py-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-rose-500 hover:text-rose-500 rounded-md text-[10px] font-bold tracking-tight transition duration-150"
                           >
                             XEM CHI TIẾT
@@ -804,7 +923,7 @@ export default async function DashboardPage({
                         </td>
                         <td className="p-3.5 text-center pr-5">
                           <Link 
-                            href={`/campaigns?id=${c.id}`}
+                            href={`/campaigns/${c.customerId}?id=${c.id}`}
                             className="inline-flex items-center justify-center px-3 py-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-amber-500 hover:text-amber-500 rounded-md text-[10px] font-bold tracking-tight transition duration-150"
                           >
                             XEM CHI TIẾT

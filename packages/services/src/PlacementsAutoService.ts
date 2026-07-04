@@ -149,7 +149,7 @@ export class PlacementsAutoService {
         return false;
       }
 
-      const model = isPro ? "gemini-2.5-pro" : "gemini-3.1-flash";
+      const model = isPro ? "gemini-2.5-pro" : "gemini-2.5-flash";
       const range = account.placementsAutoExcludeRange || "YESTERDAY";
       const productContext = account.placementsProductContext || "";
 
