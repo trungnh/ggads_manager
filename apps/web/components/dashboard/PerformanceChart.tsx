@@ -66,7 +66,7 @@ export default function PerformanceChart({
     if (label === "7days") return "7 ngày qua"
     if (label === "15days") return "15 ngày qua"
     if (label === "30days") return "30 ngày qua"
-    return "Tùy chọn"
+    return label || "Tùy chọn"
   }
 
   return (

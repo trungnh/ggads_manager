@@ -18,21 +18,23 @@ interface CampaignChartModalProps {
   onClose: () => void;
   campaign: { id: string, name: string };
   customerId: string;
+  startDate: string;
+  endDate: string;
 }
 
-export default function CampaignChartModal({ isOpen, onClose, campaign, customerId }: CampaignChartModalProps) {
+export default function CampaignChartModal({ isOpen, onClose, campaign, customerId, startDate, endDate }: CampaignChartModalProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (isOpen) {
       setLoading(true)
-      fetch(`/api/campaigns/chart?customerId=${customerId}&campaignId=${campaign.id}`)
+      fetch(`/api/campaigns/chart?customerId=${customerId}&campaignId=${campaign.id}&startDate=${startDate}&endDate=${endDate}`)
         .then(res => res.json())
         .then(d => setData(d))
         .finally(() => setLoading(false))
     }
-  }, [isOpen, campaign.id, customerId])
+  }, [isOpen, campaign.id, customerId, startDate, endDate])
 
   if (!isOpen) return null
 
@@ -59,7 +61,9 @@ export default function CampaignChartModal({ isOpen, onClose, campaign, customer
             </h2>
             <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-3)' }}>
               <span>ID: {campaign.id}</span>
-              <span style={{ color: 'var(--primary)', fontWeight: 500 }}>Dữ liệu 14 ngày gần nhất</span>
+              <span style={{ color: 'var(--primary)', fontWeight: 500 }}>
+                {startDate === endDate ? `Báo cáo ngày ${startDate}` : `Từ ngày ${startDate} đến ${endDate}`}
+              </span>
             </div>
           </div>
           <button onClick={onClose} style={{ 
@@ -107,6 +111,7 @@ export default function CampaignChartModal({ isOpen, onClose, campaign, customer
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: 'var(--text-3)', fontSize: 11 }}
+                    tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M ₫` : v >= 1000 ? `${(v/1000).toFixed(0)}k ₫` : `${v} ₫`}
                   />
                   <YAxis 
                     yAxisId="right" 
@@ -114,6 +119,7 @@ export default function CampaignChartModal({ isOpen, onClose, campaign, customer
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: 'var(--text-3)', fontSize: 11 }}
+                    tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M ₫` : v >= 1000 ? `${(v/1000).toFixed(0)}k ₫` : `${v} ₫`}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -121,6 +127,11 @@ export default function CampaignChartModal({ isOpen, onClose, campaign, customer
                       borderRadius: 12, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' 
                     }}
                     labelStyle={{ fontWeight: 600, color: 'var(--text-1)', marginBottom: 8 }}
+                    formatter={(value: any, name: any) => {
+                      if (name === 'Chi tiêu (VND)') return [`${Number(value).toLocaleString('vi-VN')} ₫`, 'Chi tiêu']
+                      if (name === 'CPA thực tế') return [`${Number(value).toLocaleString('vi-VN')} ₫`, 'CPA thực tế']
+                      return [value, name]
+                    }}
                   />
                   <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
                   <Area 

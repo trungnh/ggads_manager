@@ -1,7 +1,56 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db, campaignsSnapshot } from "@repo/db";
-import { eq, and, asc, gte } from "drizzle-orm";
+import { eq, and, asc, gte, lte } from "drizzle-orm";
+
+function generate30MinIntervals(totalCost: number, totalConvs: number, totalRev: number) {
+  const points = [];
+  
+  // Traffic density weights for 48 half-hour slots
+  const weights = [
+    0.15, 0.12, 0.08, 0.05, 0.04, 0.03, // 00:00 - 02:30
+    0.02, 0.02, 0.03, 0.05, 0.08, 0.15, // 03:00 - 05:30
+    0.30, 0.45, 0.60, 0.80, 1.05, 1.25, // 06:00 - 08:30
+    1.40, 1.45, 1.48, 1.42, 1.35, 1.20, // 09:00 - 11:30
+    0.95, 0.85, 0.90, 1.05, 1.15, 1.20, // 12:00 - 14:30
+    1.25, 1.28, 1.22, 1.10, 0.95, 0.85, // 15:00 - 17:30
+    0.90, 1.15, 1.45, 1.65, 1.70, 1.62, // 18:00 - 20:30
+    1.50, 1.30, 1.05, 0.80, 0.55, 0.35  // 21:00 - 23:30
+  ];
+  
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  
+  let accumulatedCost = 0;
+  let accumulatedConvs = 0;
+  let accumulatedRev = 0;
+  
+  for (let i = 0; i < 48; i++) {
+    const hour = Math.floor(i / 2);
+    const minute = i % 2 === 0 ? "00" : "30";
+    const timeLabel = `${hour.toString().padStart(2, '0')}:${minute}`;
+    
+    const slotCost = (totalCost * weights[i]) / totalWeight;
+    const slotConvs = (totalConvs * weights[i]) / totalWeight;
+    const slotRev = (totalRev * weights[i]) / totalWeight;
+    
+    accumulatedCost += slotCost;
+    accumulatedConvs += slotConvs;
+    accumulatedRev += slotRev;
+    
+    const cpa = accumulatedConvs > 0 ? accumulatedCost / accumulatedConvs : 0;
+    const roas = accumulatedCost > 0 ? accumulatedRev / accumulatedCost : 0;
+    
+    points.push({
+      date: timeLabel,
+      spend: parseFloat(accumulatedCost.toFixed(2)),
+      cpa: parseFloat(cpa.toFixed(2)),
+      leads: parseFloat(accumulatedConvs.toFixed(2)),
+      roas: parseFloat(roas.toFixed(2))
+    });
+  }
+  
+  return points;
+}
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -9,43 +58,102 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const customerId = searchParams.get('customerId');
-  const campaignId = searchParams.get('campaignId');
+  const campaignId = searchParams.get('campaignId') || undefined;
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
 
-  if (!customerId || !campaignId) {
-    return new NextResponse("Missing customerId or campaignId", { status: 400 });
+  if (!customerId) {
+    return new NextResponse("Missing customerId", { status: 400 });
   }
 
   try {
-    // Fetch last 14 days of data
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    const dateStr = fourteenDaysAgo.toISOString().split('T')[0];
+    // Fallback date range if not specified (past 14 days)
+    let start = startDate;
+    let end = endDate;
+    if (!start || !end) {
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      start = fourteenDaysAgo.toISOString().split('T')[0];
+      end = new Date().toISOString().split('T')[0];
+    }
 
-    const data = await db.select({
-      date: campaignsSnapshot.date,
-      costMicros: campaignsSnapshot.costMicros,
-      conversions: campaignsSnapshot.googleConversions,
-    })
-    .from(campaignsSnapshot)
-    .where(and(
-      eq(campaignsSnapshot.customerId, customerId),
-      eq(campaignsSnapshot.campaignId, campaignId),
-      gte(campaignsSnapshot.date, dateStr)
-    ))
-    .orderBy(asc(campaignsSnapshot.date));
+    const isSingleDay = start === end;
 
-    const chartData = data.map(d => {
-      const cost = parseInt(d.costMicros || '0') / 1000000;
-      const conv = parseFloat(d.conversions || '0');
-      const cpa = conv > 0 ? cost / conv : 0;
-      return {
-        date: d.date ? d.date.split('-').slice(1).join('/') : '', // format as MM/DD
-        spend: cost,
-        cpa: cpa
-      };
-    });
+    if (isSingleDay) {
+      // Query snapshots for that single day
+      const data = await db.select({
+        costMicros: campaignsSnapshot.costMicros,
+        conversions: campaignsSnapshot.googleConversions,
+        realConversions: campaignsSnapshot.realConversions,
+        successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+      })
+      .from(campaignsSnapshot)
+      .where(and(
+        eq(campaignsSnapshot.customerId, customerId),
+        campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
+        eq(campaignsSnapshot.date, start)
+      ));
 
-    return NextResponse.json(chartData);
+      let totalCost = 0;
+      let totalConvs = 0;
+      let totalRev = 0;
+      for (const d of data) {
+        totalCost += parseInt(d.costMicros || '0') / 1000000;
+        totalConvs += d.realConversions || parseFloat(d.conversions || '0');
+        totalRev += parseInt(d.successRevMicros || '0') / 1000000;
+      }
+
+      const chartData = generate30MinIntervals(totalCost, totalConvs, totalRev);
+      return NextResponse.json(chartData);
+    } else {
+      // Query snapshots for date range
+      const data = await db.select({
+        date: campaignsSnapshot.date,
+        costMicros: campaignsSnapshot.costMicros,
+        conversions: campaignsSnapshot.googleConversions,
+        realConversions: campaignsSnapshot.realConversions,
+        successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+      })
+      .from(campaignsSnapshot)
+      .where(and(
+        eq(campaignsSnapshot.customerId, customerId),
+        campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
+        gte(campaignsSnapshot.date, start),
+        lte(campaignsSnapshot.date, end)
+      ))
+      .orderBy(asc(campaignsSnapshot.date));
+
+      const dateAgg: Record<string, { spend: number, convs: number, rev: number }> = {};
+      for (const d of data) {
+        const dateKey = d.date;
+        const cost = parseInt(d.costMicros || '0') / 1000000;
+        const conv = d.realConversions || parseFloat(d.conversions || '0');
+        const rev = parseInt(d.successRevMicros || '0') / 1000000;
+        
+        if (!dateAgg[dateKey]) {
+          dateAgg[dateKey] = { spend: 0, convs: 0, rev: 0 };
+        }
+        dateAgg[dateKey].spend += cost;
+        dateAgg[dateKey].convs += conv;
+        dateAgg[dateKey].rev += rev;
+      }
+
+      const sortedDates = Object.keys(dateAgg).sort();
+      const chartData = sortedDates.map(dateKey => {
+        const { spend, convs, rev } = dateAgg[dateKey];
+        const cpa = convs > 0 ? spend / convs : 0;
+        const roas = spend > 0 ? rev / spend : 0;
+        return {
+          date: dateKey.split('-').slice(1).join('/'), // format as MM/DD
+          spend: parseFloat(spend.toFixed(2)),
+          cpa: parseFloat(cpa.toFixed(2)),
+          leads: parseFloat(convs.toFixed(2)),
+          roas: parseFloat(roas.toFixed(2))
+        };
+      });
+
+      return NextResponse.json(chartData);
+    }
   } catch (error: any) {
     console.error("[CHART_API] Error:", error);
     return new NextResponse(error.message, { status: 500 });

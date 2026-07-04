@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import CampaignChartModal from './CampaignChartModal'
+import PerformanceChart from '@/components/dashboard/PerformanceChart'
 import { cn } from "@/lib/utils"
 
 interface Campaign {
@@ -68,6 +69,18 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
   useEffect(() => {
     setCampaigns(initialCampaigns)
   }, [initialCampaigns])
+
+  const [chartData, setChartData] = useState<any[]>([])
+  const [chartLoading, setChartLoading] = useState(true)
+
+  useEffect(() => {
+    setChartLoading(true)
+    fetch(`/api/campaigns/chart?customerId=${account.customerId}&startDate=${startDate}&endDate=${endDate}`)
+      .then(res => res.json())
+      .then(d => setChartData(d))
+      .catch(err => console.error("Error loading account chart:", err))
+      .finally(() => setChartLoading(false))
+  }, [account.customerId, startDate, endDate])
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(c => {
@@ -246,6 +259,23 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
           </Button>
         </div>
       </div>
+
+      {/* Performance & Trend Chart */}
+      {chartLoading ? (
+        <div className="h-[280px] bg-card border border-border rounded-xl flex items-center justify-center text-muted-foreground text-xs font-medium">
+          Đang tải biểu đồ hiệu suất tài khoản...
+        </div>
+      ) : chartData.length > 0 ? (
+        <PerformanceChart 
+          data={chartData.map(d => ({
+            date: d.date,
+            cost: d.spend,
+            leads: d.leads,
+            roas: d.roas
+          }))} 
+          rangeLabel={startDate === endDate ? `Báo cáo ngày ${startDate}` : `Khoảng ngày ${startDate} đến ${endDate}`} 
+        />
+      ) : null}
 
       {/* Stats Overview Rebranded to Etraverse Central Admin */}
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-5">
@@ -644,6 +674,8 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
           onClose={() => setSelectedChartCampaign(null)}
           campaign={selectedChartCampaign}
           customerId={account.customerId}
+          startDate={startDate}
+          endDate={endDate}
         />
       )}
     </div>
