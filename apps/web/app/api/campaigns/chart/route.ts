@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db, campaignsSnapshot } from "@repo/db";
+import { db, campaignsSnapshot, campaignChartPoints } from "@repo/db";
 import { eq, and, asc, gte, lte } from "drizzle-orm";
 
 function generate30MinIntervals(totalCost: number, totalConvs: number, totalRev: number) {
@@ -80,31 +80,103 @@ export async function GET(request: Request) {
     const isSingleDay = start === end;
 
     if (isSingleDay) {
-      // Query snapshots for that single day
+      // Construct date boundaries for the single day query in Local Time zone
+      const startOfDay = new Date(`${start}T00:00:00`);
+      const endOfDay = new Date(`${start}T23:59:59`);
+
+      // Query actual 30-minute interval database chart points
       const data = await db.select({
-        costMicros: campaignsSnapshot.costMicros,
-        conversions: campaignsSnapshot.googleConversions,
-        realConversions: campaignsSnapshot.realConversions,
-        successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+        slotTs: campaignChartPoints.slotTs,
+        costMicros: campaignChartPoints.deltaCostMicros,
+        conversions: campaignChartPoints.deltaConversions,
+        conversionsSuccess: campaignChartPoints.deltaConversionsSuccess,
+        successRevMicros: campaignChartPoints.deltaConversionValueSuccessMicros,
       })
-      .from(campaignsSnapshot)
+      .from(campaignChartPoints)
       .where(and(
-        eq(campaignsSnapshot.customerId, customerId),
-        campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
-        eq(campaignsSnapshot.date, start)
-      ));
+        eq(campaignChartPoints.customerId, customerId),
+        campaignId ? eq(campaignChartPoints.campaignId, campaignId) : undefined,
+        eq(campaignChartPoints.granularity, '30m'),
+        gte(campaignChartPoints.slotTs, startOfDay),
+        lte(campaignChartPoints.slotTs, endOfDay)
+      ))
+      .orderBy(asc(campaignChartPoints.slotTs));
 
-      let totalCost = 0;
-      let totalConvs = 0;
-      let totalRev = 0;
-      for (const d of data) {
-        totalCost += parseInt(d.costMicros || '0') / 1000000;
-        totalConvs += d.realConversions || parseFloat(d.conversions || '0');
-        totalRev += parseInt(d.successRevMicros || '0') / 1000000;
+      if (data.length > 0) {
+        const slotAgg: Record<string, { spend: number, convs: number, rev: number }> = {};
+        
+        for (const d of data) {
+          if (!d.slotTs) continue;
+          // Format slotTs in Ho Chi Minh timezone
+          const timeKey = d.slotTs.toLocaleTimeString('en-US', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          const cost = parseInt(d.costMicros || '0') / 1000000;
+          const conv = d.conversionsSuccess || d.conversions || 0;
+          const rev = parseInt(d.successRevMicros || '0') / 1000000;
+          
+          if (!slotAgg[timeKey]) {
+            slotAgg[timeKey] = { spend: 0, convs: 0, rev: 0 };
+          }
+          slotAgg[timeKey].spend += cost;
+          slotAgg[timeKey].convs += conv;
+          slotAgg[timeKey].rev += rev;
+        }
+
+        const sortedTimes = Object.keys(slotAgg).sort();
+        let runningSpend = 0;
+        let runningConvs = 0;
+        let runningRev = 0;
+
+        const chartData = sortedTimes.map(timeKey => {
+          const { spend, convs, rev } = slotAgg[timeKey];
+          runningSpend += spend;
+          runningConvs += convs;
+          runningRev += rev;
+
+          const cpa = runningConvs > 0 ? runningSpend / runningConvs : 0;
+          const roas = runningSpend > 0 ? runningRev / runningSpend : 0;
+          return {
+            date: timeKey,
+            spend: parseFloat(runningSpend.toFixed(2)),
+            cpa: parseFloat(cpa.toFixed(2)),
+            leads: parseFloat(runningConvs.toFixed(2)),
+            roas: parseFloat(roas.toFixed(2))
+          };
+        });
+        
+        return NextResponse.json(chartData);
+      } else {
+        // Fallback: Query from daily campaignsSnapshot and generate using weights
+        const dailyData = await db.select({
+          costMicros: campaignsSnapshot.costMicros,
+          conversions: campaignsSnapshot.googleConversions,
+          realConversions: campaignsSnapshot.realConversions,
+          successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+        })
+        .from(campaignsSnapshot)
+        .where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
+          eq(campaignsSnapshot.date, start)
+        ));
+
+        let totalCost = 0;
+        let totalConvs = 0;
+        let totalRev = 0;
+        for (const d of dailyData) {
+          totalCost += parseInt(d.costMicros || '0') / 1000000;
+          totalConvs += d.realConversions || parseFloat(d.conversions || '0');
+          totalRev += parseInt(d.successRevMicros || '0') / 1000000;
+        }
+
+        const chartData = generate30MinIntervals(totalCost, totalConvs, totalRev);
+        return NextResponse.json(chartData);
       }
-
-      const chartData = generate30MinIntervals(totalCost, totalConvs, totalRev);
-      return NextResponse.json(chartData);
     } else {
       // Query snapshots for date range
       const data = await db.select({

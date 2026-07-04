@@ -1,8 +1,8 @@
-import { db, campaignsSnapshot, adsAccounts, crmIntegrations, crmConnections, oauthConnections, campaignSettings, pancakeAccounts } from '@repo/db';
+import { db, campaignsSnapshot, adsAccounts, crmIntegrations, crmConnections, oauthConnections, campaignSettings, pancakeAccounts, campaignChartPoints } from '@repo/db';
 import { CampaignsService, CustomersService } from '@repo/google-ads';
 import { PancakeAdapter, GSheetAdapter, CrmConversions } from '@repo/crm';
 import { TokenService } from '@repo/shared';
-import { eq, and, desc, lt } from 'drizzle-orm';
+import { eq, and, desc, lt, sql } from 'drizzle-orm';
 import { Redis } from 'ioredis';
 
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
@@ -399,6 +399,80 @@ export class CampaignSyncService {
     searchBudgetLostImpressionShare?: string | null,
     searchRankLostImpressionShare?: string | null
   ) {
+    // Save 30-minute interval data point for today dynamically
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    if (dateStr === todayStr) {
+      try {
+        const now = new Date();
+        const roundedMinutes = Math.floor(now.getMinutes() / 30) * 30;
+        const slotTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), roundedMinutes, 0, 0);
+
+        // 1. Query the existing snapshot for today to calculate delta
+        const [existingSnapshot] = await db.select({
+          costMicros: campaignsSnapshot.costMicros,
+          realConversions: campaignsSnapshot.realConversions,
+          realConversionsSuccess: campaignsSnapshot.realConversionsSuccess,
+          realConversionValueSuccessMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+        })
+        .from(campaignsSnapshot)
+        .where(and(
+          eq(campaignsSnapshot.customerId, customerId),
+          eq(campaignsSnapshot.campaignId, raw.campaign.id),
+          eq(campaignsSnapshot.date, dateStr)
+        ))
+        .limit(1);
+
+        const currentCost = BigInt(raw.metrics.costMicros || "0");
+        const currentConvs = crm.real_conversions || 0;
+        const currentConvsSuccess = crm.real_conversions_success || 0;
+        const currentRevSuccess = BigInt(isNaN(crm.real_conversion_value_success * 1000000) ? 0 : Math.floor(crm.real_conversion_value_success * 1000000));
+
+        let deltaCost = currentCost;
+        let deltaConvs = currentConvs;
+        let deltaConvsSuccess = currentConvsSuccess;
+        let deltaRevSuccess = currentRevSuccess;
+
+        if (existingSnapshot) {
+          const prevCost = BigInt(existingSnapshot.costMicros || "0");
+          const prevConvs = existingSnapshot.realConversions || 0;
+          const prevConvsSuccess = existingSnapshot.realConversionsSuccess || 0;
+          const prevRevSuccess = BigInt(existingSnapshot.realConversionValueSuccessMicros || "0");
+
+          deltaCost = currentCost - prevCost;
+          deltaConvs = currentConvs - prevConvs;
+          deltaConvsSuccess = currentConvsSuccess - prevConvsSuccess;
+          deltaRevSuccess = currentRevSuccess - prevRevSuccess;
+
+          if (deltaCost < BigInt(0)) deltaCost = BigInt(0);
+          if (deltaConvs < 0) deltaConvs = 0;
+          if (deltaConvsSuccess < 0) deltaConvsSuccess = 0;
+          if (deltaRevSuccess < BigInt(0)) deltaRevSuccess = BigInt(0);
+        }
+
+        // 2. Increment delta in the campaignChartPoints table atomically
+        await db.insert(campaignChartPoints).values({
+          customerId,
+          campaignId: raw.campaign.id,
+          slotTs,
+          granularity: '30m',
+          deltaCostMicros: deltaCost.toString(),
+          deltaConversions: deltaConvs,
+          deltaConversionsSuccess: deltaConvsSuccess,
+          deltaConversionValueSuccessMicros: deltaRevSuccess.toString(),
+        }).onConflictDoUpdate({
+          target: [campaignChartPoints.customerId, campaignChartPoints.campaignId, campaignChartPoints.slotTs, campaignChartPoints.granularity],
+          set: {
+            deltaCostMicros: sql`CAST(campaign_chart_points.delta_cost_micros AS NUMERIC) + ${deltaCost.toString()}`,
+            deltaConversions: sql`campaign_chart_points.delta_conversions + ${deltaConvs}`,
+            deltaConversionsSuccess: sql`campaign_chart_points.delta_conversions_success + ${deltaConvsSuccess}`,
+            deltaConversionValueSuccessMicros: sql`CAST(campaign_chart_points.delta_conversion_value_success_micros AS NUMERIC) + ${deltaRevSuccess.toString()}`,
+          }
+        });
+      } catch (err) {
+        console.warn(`[SYNC] Failed to save campaignChartPoint for ${raw.campaign.id}:`, err);
+      }
+    }
+
     const googleConvRaw = (raw.metrics.conversions || 0).toString();
     const googleValRaw = (raw.metrics.conversionsValue ? raw.metrics.conversionsValue * 1000000 : 0).toString();
     

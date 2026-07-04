@@ -153,6 +153,8 @@ export const campaignChartPoints = pgTable("campaign_chart_points", {
   granularity: varchar("granularity", { length: 5 }).notNull(),
   deltaCostMicros: numeric("delta_cost_micros", { precision: 20, scale: 0 }).default("0"),
   deltaConversions: integer("delta_conversions").default(0),
+  deltaConversionsSuccess: integer("delta_conversions_success").default(0),
+  deltaConversionValueSuccessMicros: numeric("delta_conversion_value_success_micros", { precision: 20, scale: 0 }).default("0"),
 }, (t) => ({
   uniq: unique().on(t.customerId, t.campaignId, t.slotTs, t.granularity),
   idx1: index("idx_chart_lookup").on(t.customerId, t.campaignId, t.granularity, t.slotTs),
