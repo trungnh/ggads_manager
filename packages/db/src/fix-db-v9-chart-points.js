@@ -1,6 +1,15 @@
+const path = require('path');
+// Load .env file from project root
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+
 const postgres = require('postgres');
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/gads";
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error("❌ Lỗi: Không tìm thấy DATABASE_URL trong tệp .env!");
+  process.exit(1);
+}
+
 const sql = postgres(DATABASE_URL);
 
 async function main() {
