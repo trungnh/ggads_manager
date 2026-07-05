@@ -254,7 +254,7 @@ export default async function DashboardPage({
     const prod = matchProduct(snapName);
     if (prod) {
       const impP = Number(prod.importPriceMicros || 0) / 1000000;
-      const shipF = Number(prod.shippingFee || 0);
+      const shipF = Number(prod.shippingFee || 0) / 1000000;
       const retR = Number(prod.returnRate || 0);
       
       const incT = 0.015; // 1.5%
