@@ -199,7 +199,11 @@ export default async function DashboardPage({
 
   // 1. Fetch user's revenue reports to match profit calculations
   const userReports = await db
-    .select({ id: revenueReports.id })
+    .select({
+      id: revenueReports.id,
+      productId: revenueReports.productId,
+      rates: revenueReports.rates,
+    })
     .from(revenueReports)
     .where(eq(revenueReports.userId, session.user.id));
 
@@ -252,28 +256,51 @@ export default async function DashboardPage({
 
   const calculateDynamicProfit = (snapName: string, adsCost: number, orders: number, revenue: number) => {
     const prod = matchProduct(snapName);
+    let rates = {
+      importPrice: 0,
+      shippingFee: 0,
+      returnRate: 0,
+      incomeTax: 0.015,
+      adsTax: 0.10,
+      paymentFee: 0.012
+    };
+
     if (prod) {
-      const impP = Number(prod.importPriceMicros || 0) / 1000000;
-      const shipF = Number(prod.shippingFee || 0) / 1000000;
-      const retR = Number(prod.returnRate || 0);
-      
-      const incT = 0.015; // 1.5%
-      const adsT = 0.10;  // 10%
-      const payF = 0.012; // 1.2%
-
-      const quantity = orders; 
-      const goodsCost = quantity * impP;
-      const shipCost = orders * shipF;
-      let returnCost = ((revenue - goodsCost) * retR) + (orders * retR * (shipF / 2));
-      if (returnCost < 0) returnCost = 0;
-
-      const totalDayCost = goodsCost + shipCost + returnCost + adsCost + 
-                            (adsCost * adsT) + 
-                            (adsCost * payF) + 
-                            (revenue * incT);
-      return revenue - totalDayCost;
+      // Find matching report for this product to read customized rates
+      const report = userReports.find(r => r.productId === prod.id);
+      if (report && report.rates) {
+        const r = report.rates as any;
+        rates = {
+          importPrice: r.importPrice !== undefined ? Number(r.importPrice) : Number(prod.importPriceMicros || 0) / 1000000,
+          shippingFee: r.shippingFee !== undefined ? Number(r.shippingFee) : Number(prod.shippingFee || 0) / 1000000,
+          returnRate: r.returnRate !== undefined ? Number(r.returnRate) : Number(prod.returnRate || 0),
+          incomeTax: r.incomeTax !== undefined ? Number(r.incomeTax) : 0.015,
+          adsTax: r.adsTax !== undefined ? Number(r.adsTax) : 0.10,
+          paymentFee: r.paymentFee !== undefined ? Number(r.paymentFee) : 0.012
+        };
+      } else {
+        rates = {
+          importPrice: Number(prod.importPriceMicros || 0) / 1000000,
+          shippingFee: Number(prod.shippingFee || 0) / 1000000,
+          returnRate: Number(prod.returnRate || 0),
+          incomeTax: 0.015,
+          adsTax: 0.10,
+          paymentFee: 0.012
+        };
+      }
     }
-    return revenue - adsCost;
+
+    const quantity = orders; 
+    const goodsCost = quantity * rates.importPrice;
+    const shipCost = orders * rates.shippingFee;
+    let returnCost = ((revenue - goodsCost) * rates.returnRate) + (orders * rates.returnRate * (rates.shippingFee / 2));
+    if (returnCost < 0) returnCost = 0;
+
+    const totalDayCost = goodsCost + shipCost + returnCost + adsCost + 
+                          (adsCost * rates.adsTax) + 
+                          (adsCost * rates.paymentFee) + 
+                          (revenue * rates.incomeTax);
+    return revenue - totalDayCost;
   };
 
   // 2. Sum up total metrics over selected range, prioritizing report statistics
