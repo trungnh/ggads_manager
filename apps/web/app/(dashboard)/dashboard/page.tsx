@@ -222,6 +222,20 @@ export default async function DashboardPage({
       ));
   }
 
+  const formatDateStr = (dateVal: any) => {
+    if (!dateVal) return "";
+    if (dateVal instanceof Date) {
+      const y = dateVal.getFullYear();
+      const m = String(dateVal.getMonth() + 1).padStart(2, '0');
+      const d = String(dateVal.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    if (typeof dateVal === 'string') {
+      return dateVal.split('T')[0];
+    }
+    return String(dateVal);
+  };
+
   // 2. Sum up total metrics over selected range, prioritizing report statistics
   let totalCost = 0;
   let totalCRMConvsSuccess = 0;
@@ -236,7 +250,7 @@ export default async function DashboardPage({
   }
 
   for (const dateStr of selectedRangeDates) {
-    const reportRows = selectedRangeReports.filter(d => d.date === dateStr);
+    const reportRows = selectedRangeReports.filter(d => formatDateStr(d.date) === dateStr);
     if (reportRows.length > 0) {
       for (const r of reportRows) {
         totalCost += Number(r.adsCostMicros || 0) / 1000000;
@@ -245,7 +259,7 @@ export default async function DashboardPage({
         netProfit += Number(r.profitMicros || 0) / 1000000;
       }
     } else {
-      const snaps = snapshots.filter(s => s.date === dateStr);
+      const snaps = snapshots.filter(s => formatDateStr(s.date) === dateStr);
       let dayCost = 0;
       let dayConvs = 0;
       let dayRev = 0;
@@ -315,7 +329,7 @@ export default async function DashboardPage({
     }
 
     chartData = chartDates.map(dateStr => {
-      const reportRows = chartReportsData.filter(d => d.date === dateStr);
+      const reportRows = chartReportsData.filter(d => formatDateStr(d.date) === dateStr);
       let costSum = 0;
       let convsSum = 0;
       let revSum = 0;
@@ -329,7 +343,7 @@ export default async function DashboardPage({
           profitSum += Number(r.profitMicros || 0) / 1000000;
         }
       } else {
-        const snaps = chartSnaps.filter(s => s.date === dateStr);
+        const snaps = chartSnaps.filter(s => formatDateStr(s.date) === dateStr);
         for (const s of snaps) {
           costSum += Number(s.costMicros || 0) / 1000000;
           convsSum += s.realConversions || 0;
