@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { db, adsAccounts, userAdsAccounts, campaignSchedules, ruleLogs, campaignsSnapshot } from "@repo/db";
+import { db, adsAccounts, userAdsAccounts, campaignSchedules, ruleLogs, campaignsSnapshot, revenueReports, revenueReportDaily } from "@repo/db";
 import { eq, and, desc, lte, gte, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -180,32 +180,6 @@ export default async function DashboardPage({
       )
     ));
 
-  // Compute KPI summaries for the selected date range
-  let totalCostMicros = 0n;
-  let totalBudgetMicros = 0n;
-  let totalCRMConvsSuccess = 0;
-  let totalCRMRevenueSuccessMicros = 0n;
-  let totalGoogleConvs = 0;
-
-  for (const snap of snapshots) {
-    totalCostMicros += BigInt(snap.costMicros || "0");
-    totalBudgetMicros += BigInt(snap.budgetMicros || "0");
-    totalCRMConvsSuccess += snap.realConversions || 0;
-    totalCRMRevenueSuccessMicros += BigInt(snap.realConversionValueSuccessMicros || "0");
-    totalGoogleConvs += parseFloat(snap.googleConversions || "0");
-  }
-
-  const totalCost = Number(totalCostMicros) / 1000000;
-  const totalBudget = Number(totalBudgetMicros) / 1000000;
-  const totalCRMRevenue = Number(totalCRMRevenueSuccessMicros) / 1000000;
-  const cpa = totalCRMConvsSuccess > 0 ? totalCost / totalCRMConvsSuccess : 0;
-  const roas = totalCost > 0 ? totalCRMRevenue / totalCost : 0;
-  const netProfit = totalCRMRevenue - totalCost;
-
-  // Monthly theoretical budget projection (Daily budgets sum * 30 days)
-  const monthlyBudgetGoal = totalBudget * 30;
-  const budgetSpentPct = monthlyBudgetGoal > 0 ? (totalCost / monthlyBudgetGoal) * 100 : 0;
-
   // Timezone-safe date generator
   const getDatesRange = (startStr: string, endStr: string) => {
     const dateArr: string[] = [];
@@ -220,6 +194,80 @@ export default async function DashboardPage({
     }
     return dateArr;
   };
+
+  const selectedRangeDates = getDatesRange(startDateStr, endDateStr);
+
+  // 1. Fetch user's revenue reports to match profit calculations
+  const userReports = await db
+    .select({ id: revenueReports.id })
+    .from(revenueReports)
+    .where(eq(revenueReports.userId, session.user.id));
+
+  let selectedRangeReports: any[] = [];
+  if (userReports.length > 0) {
+    const reportIds = userReports.map(r => r.id);
+    selectedRangeReports = await db
+      .select({
+        orders: revenueReportDaily.orders,
+        revenueMicros: revenueReportDaily.revenueMicros,
+        adsCostMicros: revenueReportDaily.adsCostMicros,
+        profitMicros: revenueReportDaily.profitMicros,
+        date: revenueReportDaily.date,
+      })
+      .from(revenueReportDaily)
+      .where(and(
+        inArray(revenueReportDaily.reportId, reportIds),
+        gte(revenueReportDaily.date, startDateStr),
+        lte(revenueReportDaily.date, endDateStr)
+      ));
+  }
+
+  // 2. Sum up total metrics over selected range, prioritizing report statistics
+  let totalCost = 0;
+  let totalCRMConvsSuccess = 0;
+  let totalCRMRevenue = 0;
+  let netProfit = 0;
+  let totalGoogleConvs = 0;
+  let totalBudgetMicros = 0n;
+
+  for (const snap of snapshots) {
+    totalBudgetMicros += BigInt(snap.budgetMicros || "0");
+    totalGoogleConvs += parseFloat(snap.googleConversions || "0");
+  }
+
+  for (const dateStr of selectedRangeDates) {
+    const reportRows = selectedRangeReports.filter(d => d.date === dateStr);
+    if (reportRows.length > 0) {
+      for (const r of reportRows) {
+        totalCost += Number(r.adsCostMicros || 0) / 1000000;
+        totalCRMConvsSuccess += r.orders || 0;
+        totalCRMRevenue += Number(r.revenueMicros || 0) / 1000000;
+        netProfit += Number(r.profitMicros || 0) / 1000000;
+      }
+    } else {
+      const snaps = snapshots.filter(s => s.date === dateStr);
+      let dayCost = 0;
+      let dayConvs = 0;
+      let dayRev = 0;
+      for (const s of snaps) {
+        dayCost += Number(s.costMicros || 0) / 1000000;
+        dayConvs += s.realConversions || 0;
+        dayRev += Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+      }
+      totalCost += dayCost;
+      totalCRMConvsSuccess += dayConvs;
+      totalCRMRevenue += dayRev;
+      netProfit += (dayRev - dayCost);
+    }
+  }
+
+  const totalBudget = Number(totalBudgetMicros) / 1000000;
+  const cpa = totalCRMConvsSuccess > 0 ? totalCost / totalCRMConvsSuccess : 0;
+  const roas = totalCost > 0 ? totalCRMRevenue / totalCost : 0;
+
+  // Monthly theoretical budget projection (Daily budgets sum * 30 days)
+  const monthlyBudgetGoal = totalBudget * 30;
+  const budgetSpentPct = monthlyBudgetGoal > 0 ? (totalCost / monthlyBudgetGoal) * 100 : 0;
 
   // Generate calendar dates for the chart based on selected relative option
   let chartDates: string[] = [];
@@ -248,28 +296,58 @@ export default async function DashboardPage({
         inArray(campaignsSnapshot.date, chartDates)
       ));
 
+    let chartReportsData: any[] = [];
+    if (userReports.length > 0) {
+      const reportIds = userReports.map(r => r.id);
+      chartReportsData = await db
+        .select({
+          orders: revenueReportDaily.orders,
+          revenueMicros: revenueReportDaily.revenueMicros,
+          adsCostMicros: revenueReportDaily.adsCostMicros,
+          profitMicros: revenueReportDaily.profitMicros,
+          date: revenueReportDaily.date,
+        })
+        .from(revenueReportDaily)
+        .where(and(
+          inArray(revenueReportDaily.reportId, reportIds),
+          inArray(revenueReportDaily.date, chartDates)
+        ));
+    }
+
     chartData = chartDates.map(dateStr => {
-      const snaps = chartSnaps.filter(s => s.date === dateStr);
+      const reportRows = chartReportsData.filter(d => d.date === dateStr);
       let costSum = 0;
       let convsSum = 0;
       let revSum = 0;
+      let profitSum = 0;
 
-      for (const s of snaps) {
-        costSum += Number(s.costMicros || 0) / 1000000;
-        convsSum += s.realConversions || 0;
-        revSum += Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+      if (reportRows.length > 0) {
+        for (const r of reportRows) {
+          costSum += Number(r.adsCostMicros || 0) / 1000000;
+          convsSum += r.orders || 0;
+          revSum += Number(r.revenueMicros || 0) / 1000000;
+          profitSum += Number(r.profitMicros || 0) / 1000000;
+        }
+      } else {
+        const snaps = chartSnaps.filter(s => s.date === dateStr);
+        for (const s of snaps) {
+          costSum += Number(s.costMicros || 0) / 1000000;
+          convsSum += s.realConversions || 0;
+          revSum += Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+        }
+        profitSum = revSum - costSum;
       }
 
-      const roas = costSum > 0 ? Number((revSum / costSum).toFixed(2)) : 0;
-
+      const roasVal = costSum > 0 ? Number((revSum / costSum).toFixed(2)) : 0;
       const [y, m, d] = dateStr.split('-');
+
       return {
         date: `${d}/${m}`,
         cost: costSum,
         leads: convsSum,
-        roas: roas,
+        roas: roasVal,
         rev: revSum,
-        profit: revSum - costSum
+        profit: profitSum
       };
     });
   }
