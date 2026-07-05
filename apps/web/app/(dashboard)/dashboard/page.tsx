@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { db, adsAccounts, userAdsAccounts, campaignSchedules, ruleLogs, campaignsSnapshot, revenueReports, revenueReportDaily } from "@repo/db";
+import { db, adsAccounts, userAdsAccounts, campaignSchedules, ruleLogs, campaignsSnapshot, revenueReports, revenueReportDaily, products } from "@repo/db";
 import { eq, and, desc, lte, gte, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -236,6 +236,46 @@ export default async function DashboardPage({
     return String(dateVal);
   };
 
+  // Fetch products and match rates to support real-time dynamic profit math
+  const userProducts = await db
+    .select()
+    .from(products)
+    .where(eq(products.userId, session.user.id));
+
+  const matchProduct = (snapName: string) => {
+    if (!snapName) return null;
+    return userProducts.find(p => 
+      p.keywordCampaign && 
+      snapName.toLowerCase().includes(p.keywordCampaign.toLowerCase())
+    );
+  };
+
+  const calculateDynamicProfit = (snapName: string, adsCost: number, orders: number, revenue: number) => {
+    const prod = matchProduct(snapName);
+    if (prod) {
+      const impP = Number(prod.importPriceMicros || 0) / 1000000;
+      const shipF = Number(prod.shippingFee || 0);
+      const retR = Number(prod.returnRate || 0);
+      
+      const incT = 0.015; // 1.5%
+      const adsT = 0.10;  // 10%
+      const payF = 0.012; // 1.2%
+
+      const quantity = orders; 
+      const goodsCost = quantity * impP;
+      const shipCost = orders * shipF;
+      let returnCost = ((revenue - goodsCost) * retR) + (orders * retR * (shipF / 2));
+      if (returnCost < 0) returnCost = 0;
+
+      const totalDayCost = goodsCost + shipCost + returnCost + adsCost + 
+                            (adsCost * adsT) + 
+                            (adsCost * payF) + 
+                            (revenue * incT);
+      return revenue - totalDayCost;
+    }
+    return revenue - adsCost;
+  };
+
   // 2. Sum up total metrics over selected range, prioritizing report statistics
   let totalCost = 0;
   let totalCRMConvsSuccess = 0;
@@ -251,7 +291,9 @@ export default async function DashboardPage({
 
   for (const dateStr of selectedRangeDates) {
     const reportRows = selectedRangeReports.filter(d => formatDateStr(d.date) === dateStr);
-    if (reportRows.length > 0) {
+    const reportRevSum = reportRows.reduce((sum, r) => sum + Number(r.revenueMicros || 0), 0);
+
+    if (reportRows.length > 0 && reportRevSum > 0) {
       for (const r of reportRows) {
         totalCost += Number(r.adsCostMicros || 0) / 1000000;
         totalCRMConvsSuccess += r.orders || 0;
@@ -263,15 +305,22 @@ export default async function DashboardPage({
       let dayCost = 0;
       let dayConvs = 0;
       let dayRev = 0;
+      let dayProfit = 0;
+
       for (const s of snaps) {
-        dayCost += Number(s.costMicros || 0) / 1000000;
-        dayConvs += s.realConversions || 0;
-        dayRev += Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+        const adsCost = Number(s.costMicros || 0) / 1000000;
+        const orders = s.realConversions || 0;
+        const revenue = Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+
+        dayCost += adsCost;
+        dayConvs += orders;
+        dayRev += revenue;
+        dayProfit += calculateDynamicProfit(s.name || "", adsCost, orders, revenue);
       }
       totalCost += dayCost;
       totalCRMConvsSuccess += dayConvs;
       totalCRMRevenue += dayRev;
-      netProfit += (dayRev - dayCost);
+      netProfit += dayProfit;
     }
   }
 
@@ -330,12 +379,14 @@ export default async function DashboardPage({
 
     chartData = chartDates.map(dateStr => {
       const reportRows = chartReportsData.filter(d => formatDateStr(d.date) === dateStr);
+      const reportRevSum = reportRows.reduce((sum, r) => sum + Number(r.revenueMicros || 0), 0);
+
       let costSum = 0;
       let convsSum = 0;
       let revSum = 0;
       let profitSum = 0;
 
-      if (reportRows.length > 0) {
+      if (reportRows.length > 0 && reportRevSum > 0) {
         for (const r of reportRows) {
           costSum += Number(r.adsCostMicros || 0) / 1000000;
           convsSum += r.orders || 0;
@@ -345,11 +396,15 @@ export default async function DashboardPage({
       } else {
         const snaps = chartSnaps.filter(s => formatDateStr(s.date) === dateStr);
         for (const s of snaps) {
-          costSum += Number(s.costMicros || 0) / 1000000;
-          convsSum += s.realConversions || 0;
-          revSum += Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+          const adsCost = Number(s.costMicros || 0) / 1000000;
+          const orders = s.realConversions || 0;
+          const revenue = Number(s.realConversionValueSuccessMicros || 0) / 1000000;
+
+          costSum += adsCost;
+          convsSum += orders;
+          revSum += revenue;
+          profitSum += calculateDynamicProfit(s.name || "", adsCost, orders, revenue);
         }
-        profitSum = revSum - costSum;
       }
 
       const roasVal = costSum > 0 ? Number((revSum / costSum).toFixed(2)) : 0;
