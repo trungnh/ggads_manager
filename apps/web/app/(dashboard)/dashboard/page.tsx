@@ -255,52 +255,56 @@ export default async function DashboardPage({
   };
 
   const calculateDynamicProfit = (snapName: string, adsCost: number, orders: number, revenue: number) => {
-    const prod = matchProduct(snapName);
-    let rates = {
-      importPrice: 0,
-      shippingFee: 0,
-      returnRate: 0,
-      incomeTax: 0.015,
-      adsTax: 0.10,
-      paymentFee: 0.012
-    };
+    // PHP Controller Defaults
+    let importPrice = 0;
+    let shippingFee = 30000; // Mặc định 30,000 VND
+    let returnRate = 0.10;   // Mặc định 10%
 
+    const prod = matchProduct(snapName);
     if (prod) {
       // Find matching report for this product to read customized rates
       const report = userReports.find(r => r.productId === prod.id);
       if (report && report.rates) {
         const r = report.rates as any;
-        rates = {
-          importPrice: r.importPrice !== undefined ? Number(r.importPrice) : Number(prod.importPriceMicros || 0) / 1000000,
-          shippingFee: r.shippingFee !== undefined ? Number(r.shippingFee) : Number(prod.shippingFee || 0) / 1000000,
-          returnRate: r.returnRate !== undefined ? Number(r.returnRate) : Number(prod.returnRate || 0),
-          incomeTax: r.incomeTax !== undefined ? Number(r.incomeTax) : 0.015,
-          adsTax: r.adsTax !== undefined ? Number(r.adsTax) : 0.10,
-          paymentFee: r.paymentFee !== undefined ? Number(r.paymentFee) : 0.012
-        };
+        importPrice = r.importPrice !== undefined ? Number(r.importPrice) : Number(prod.importPriceMicros || 0) / 1000000;
+        shippingFee = r.shippingFee !== undefined ? Number(r.shippingFee) : Number(prod.shippingFee || 0) / 1000000;
+        returnRate = r.returnRate !== undefined ? Number(r.returnRate) : Number(prod.returnRate || 0);
       } else {
-        rates = {
-          importPrice: Number(prod.importPriceMicros || 0) / 1000000,
-          shippingFee: Number(prod.shippingFee || 0) / 1000000,
-          returnRate: Number(prod.returnRate || 0),
-          incomeTax: 0.015,
-          adsTax: 0.10,
-          paymentFee: 0.012
-        };
+        importPrice = Number(prod.importPriceMicros || 0) / 1000000;
+        shippingFee = Number(prod.shippingFee || 0) / 1000000;
+        returnRate = Number(prod.returnRate || 0);
       }
     }
 
-    const quantity = orders; 
-    const goodsCost = quantity * rates.importPrice;
-    const shipCost = orders * rates.shippingFee;
-    let returnCost = ((revenue - goodsCost) * rates.returnRate) + (orders * rates.returnRate * (rates.shippingFee / 2));
-    if (returnCost < 0) returnCost = 0;
+    // Tính Chi phí nhập hàng (Goods Cost) - Replicating PHP COGS logic
+    let goodsCost = 0;
+    if (importPrice > 0) {
+      goodsCost = orders * importPrice;
+    } else {
+      goodsCost = revenue * 0.35; // Fallback COGS trung bình 35% doanh thu
+    }
 
-    const totalDayCost = goodsCost + shipCost + returnCost + adsCost + 
-                          (adsCost * rates.adsTax) + 
-                          (adsCost * rates.paymentFee) + 
-                          (revenue * rates.incomeTax);
-    return revenue - totalDayCost;
+    // Tính Chi phí hoàn hàng thực tế (Southeast Asia logistics formula)
+    let returnCost = ((revenue - goodsCost) * returnRate) + (orders * returnRate * (shippingFee / 2));
+    if (returnCost < 0) {
+      returnCost = 0;
+    }
+
+    // Taxes & Fees
+    const adsTaxRate = 0.10;      // TAX_ADS env default 0.10
+    const paymentFeeRate = 0.012; // FEE_PAYMENT env default 0.012
+    const incomeTaxRate = 0.015;  // TAX_INCOME env default 0.015
+    const shipCost = orders * shippingFee;
+
+    const totalCost = goodsCost 
+      + shipCost 
+      + returnCost 
+      + adsCost 
+      + (adsCost * adsTaxRate) 
+      + (adsCost * paymentFeeRate) 
+      + (revenue * incomeTaxRate);
+
+    return revenue - totalCost;
   };
 
   // 2. Sum up total metrics over selected range, prioritizing report statistics
