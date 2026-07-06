@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db, adsAccounts, userAdsAccounts, campaignSchedules, ruleLogs, campaignsSnapshot, revenueReports, revenueReportDaily, products } from "@repo/db";
 import { eq, and, desc, lte, gte, inArray } from "drizzle-orm";
+import { RevenueService } from "@repo/services";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
@@ -207,6 +208,19 @@ export default async function DashboardPage({
     })
     .from(revenueReports)
     .where(eq(revenueReports.userId, session.user.id));
+
+  // Dynamically sync today's revenue reports to fetch the latest actual Pancake CRM values (including goodsCost)
+  if (endDateStr === actualTodayDate && userReports.length > 0) {
+    try {
+      await Promise.allSettled(
+        userReports.map(report => 
+          RevenueService.syncDailyRevenue(session.user.id, report.id, actualTodayDate)
+        )
+      );
+    } catch (syncErr) {
+      console.error("[DASHBOARD] Failed dynamic syncDailyRevenue for today:", syncErr);
+    }
+  }
 
   let selectedRangeReports: any[] = [];
   if (userReports.length > 0) {
