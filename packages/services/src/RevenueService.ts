@@ -317,9 +317,28 @@ export class RevenueService {
         )
       );
 
-      const matched = product.keywordCampaign
-        ? snapshots.filter(s => s.name?.toLowerCase().includes(product.keywordCampaign!.toLowerCase()))
-        : snapshots;
+      // Fetch all user products to find the best match for each snapshot
+      const userProducts = await db
+        .select()
+        .from(products)
+        .where(eq(products.userId, userId));
+
+      const sortedProducts = [...userProducts]
+        .filter(p => p.keywordCampaign)
+        .sort((a, b) => (b.keywordCampaign?.trim().length || 0) - (a.keywordCampaign?.trim().length || 0));
+
+      const matched = snapshots.filter(s => {
+        if (!s.name) return false;
+        // Find which product is the best match for this snapshot
+        const bestMatch = sortedProducts.find(p => 
+          s.name!.toLowerCase().includes(p.keywordCampaign!.trim().toLowerCase())
+        );
+        // The snapshot belongs to this product's report if the best match is indeed this product!
+        if (!product.keywordCampaign) {
+          return bestMatch === undefined;
+        }
+        return bestMatch?.id === product.id;
+      });
 
       const adsCostMicros = matched.reduce((sum, s) => sum + Number(s.costMicros || 0), 0);
       adsCost = adsCostMicros / 1000000;

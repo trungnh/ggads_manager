@@ -248,9 +248,12 @@ export default async function DashboardPage({
 
   const matchProduct = (snapName: string) => {
     if (!snapName) return null;
-    return userProducts.find(p => 
-      p.keywordCampaign && 
-      snapName.toLowerCase().includes(p.keywordCampaign.toLowerCase())
+    const sortedProducts = [...userProducts]
+      .filter(p => p.keywordCampaign)
+      .sort((a, b) => (b.keywordCampaign?.trim().length || 0) - (a.keywordCampaign?.trim().length || 0));
+
+    return sortedProducts.find(p => 
+      snapName.toLowerCase().includes(p.keywordCampaign!.trim().toLowerCase())
     );
   };
 
