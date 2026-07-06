@@ -203,6 +203,7 @@ export default async function DashboardPage({
       id: revenueReports.id,
       productId: revenueReports.productId,
       rates: revenueReports.rates,
+      month: revenueReports.month,
     })
     .from(revenueReports)
     .where(eq(revenueReports.userId, session.user.id));
@@ -257,16 +258,18 @@ export default async function DashboardPage({
     );
   };
 
-  const calculateDynamicProfit = (snapName: string, adsCost: number, orders: number, revenue: number) => {
+  const calculateDynamicProfit = (snapName: string, adsCost: number, orders: number, revenue: number, snapDateStr: string) => {
     // PHP Controller Defaults
     let importPrice = 0;
     let shippingFee = 30000; // Mặc định 30,000 VND
     let returnRate = 0.10;   // Mặc định 10%
 
+    const monthStr = snapDateStr ? snapDateStr.substring(0, 7) : new Date().toISOString().substring(0, 7);
+
     const prod = matchProduct(snapName);
     if (prod) {
-      // Find matching report for this product to read customized rates
-      const report = userReports.find(r => r.productId === prod.id);
+      // Find matching report for this product to read customized rates for this specific month
+      const report = userReports.find(r => r.productId === prod.id && r.month === monthStr);
       if (report && report.rates) {
         const r = report.rates as any;
         importPrice = r.importPrice !== undefined ? Number(r.importPrice) : Number(prod.importPriceMicros || 0) / 1000000;
@@ -349,7 +352,7 @@ export default async function DashboardPage({
         dayCost += adsCost;
         dayConvs += orders;
         dayRev += revenue;
-        dayProfit += calculateDynamicProfit(s.name || "", adsCost, orders, revenue);
+        dayProfit += calculateDynamicProfit(s.name || "", adsCost, orders, revenue, formatDateStr(s.date));
       }
       totalCost += dayCost;
       totalCRMConvsSuccess += dayConvs;
@@ -437,7 +440,7 @@ export default async function DashboardPage({
           costSum += adsCost;
           convsSum += orders;
           revSum += revenue;
-          profitSum += calculateDynamicProfit(s.name || "", adsCost, orders, revenue);
+          profitSum += calculateDynamicProfit(s.name || "", adsCost, orders, revenue, dateStr);
         }
       }
 
