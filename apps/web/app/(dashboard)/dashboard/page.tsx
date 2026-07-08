@@ -716,7 +716,7 @@ export default async function DashboardPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 divide-y md:divide-y-0 md:divide-x divide-border">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 divide-y md:divide-y-0 md:divide-x divide-border">
           {/* Column 1: Cost */}
           <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-0">
             <div className="flex items-center justify-between">
@@ -771,7 +771,27 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          {/* Column 4: Revenue */}
+          {/* Column 4: ROAS */}
+          <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">ROAS thực tế</span>
+              <span className={cn(
+                "text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border",
+                roas >= 2.0 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+              )}>
+                ROAS
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black text-foreground tracking-tight">
+              {roas.toFixed(2)}x
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted-foreground truncate">Doanh thu / Chi tiêu</span>
+              {renderSparkline(chartData.map(d => d.roas), '#14B8A6')}
+            </div>
+          </div>
+
+          {/* Column 5: Revenue */}
           <div className="flex flex-col justify-between pt-4 md:pt-0 md:pl-6">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Doanh thu CRM</span>
