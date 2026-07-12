@@ -15,6 +15,13 @@
       "when": 1782470117611,
       "tag": "0001_late_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783852026794,
+      "tag": "0002_spicy_logan",
+      "breakpoints": true
     }
   ]
 }

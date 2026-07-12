@@ -1,0 +1,2 @@
+ALTER TABLE "campaign_chart_points" ADD COLUMN "delta_conversions_success" integer DEFAULT 0;--> statement-breakpoint
+ALTER TABLE "campaign_chart_points" ADD COLUMN "delta_conversion_value_success_micros" numeric(20, 0) DEFAULT '0';
