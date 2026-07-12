@@ -17,6 +17,56 @@ interface OAuthConnection {
   provider: string;
 }
 
+const loadGoogleApis = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if ((window as any).gapi && (window as any).google) {
+      resolve();
+      return;
+    }
+    const scriptGapi = document.createElement('script');
+    scriptGapi.src = 'https://apis.google.com/js/api.js';
+    scriptGapi.onload = () => {
+      const scriptGoogle = document.createElement('script');
+      scriptGoogle.src = 'https://accounts.google.com/gsi/client';
+      scriptGoogle.onload = () => resolve();
+      document.body.appendChild(scriptGoogle);
+    };
+    document.body.appendChild(scriptGapi);
+  });
+};
+
+const initPicker = async (accessToken: string, developerKey: string, clientId: string) => {
+  return new Promise<void>((resolve, reject) => {
+    (window as any).gapi.load('picker', {
+      callback: () => {
+        resolve();
+      },
+      onerror: () => reject(new Error('Failed to load Google Picker')),
+    });
+  });
+};
+
+const showPicker = (accessToken: string, developerKey: string, clientId: string, onSelect: (id: string, name: string) => void) => {
+  const view = new (window as any).google.picker.DocsView((window as any).google.picker.ViewId.SPREADSHEETS)
+    .setMimeTypes('application/vnd.google-apps.spreadsheet');
+
+  const picker = new (window as any).google.picker.PickerBuilder()
+    .addView(view)
+    .setOAuthToken(accessToken)
+    .setDeveloperKey(developerKey)
+    .setAppId(clientId.split('-')[0])
+    .setCallback((data: any) => {
+      if (data[(window as any).google.picker.Response.ACTION] === (window as any).google.picker.Action.PICKED) {
+        const doc = data[(window as any).google.picker.Response.DOCUMENTS][0];
+        const id = doc[(window as any).google.picker.Document.ID];
+        const name = doc[(window as any).google.picker.Document.NAME];
+        onSelect(id, name);
+      }
+    })
+    .build();
+  picker.setVisible(true);
+};
+
 export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData }: GoogleSheetModalProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -32,6 +82,8 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
   const [connections, setConnections] = useState<OAuthConnection[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingConnections, setLoadingConnections] = useState(true)
+  const [pickerLoading, setPickerLoading] = useState(false)
+  const [sheetTitle, setSheetTitle] = useState('')
 
   const { data: session } = useSession()
 
@@ -53,8 +105,21 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
         conversionValueCol: initialData.config?.conversionValueCol || '',
         campaignIdCol: initialData.config?.campaignIdCol || ''
       })
+      setSheetTitle(initialData.config?.sheetTitle || initialData.config?.sheetId || '')
+    } else {
+      setFormData({
+        name: '',
+        sheetId: '',
+        sheetName: '',
+        oauthConnectionId: '',
+        conversionDateCol: '',
+        phoneCol: '',
+        conversionValueCol: '',
+        campaignIdCol: ''
+      })
+      setSheetTitle('')
     }
-  }, [initialData])
+  }, [initialData, isOpen])
 
   const fetchConnections = async () => {
     setLoadingConnections(true)
@@ -74,9 +139,54 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
     }
   }
 
+  const handleOpenPicker = async () => {
+    if (!formData.oauthConnectionId) {
+      alert("Vui lòng kết nối và chọn tài khoản Google trước!");
+      return;
+    }
+    
+    setPickerLoading(true);
+    try {
+      // 1. Fetch OAuth token & Google keys
+      const [tokenRes, keysRes] = await Promise.all([
+        fetch(`/api/oauth/token?connectionId=${formData.oauthConnectionId}`),
+        fetch('/api/settings/google-keys')
+      ]);
+
+      if (!tokenRes.ok || !keysRes.ok) {
+        throw new Error("Không thể lấy cấu hình hoặc token xác thực Google.");
+      }
+
+      const { accessToken } = await tokenRes.json();
+      const { clientId, apiKey } = await keysRes.json();
+
+      // 2. Load Google scripts
+      await loadGoogleApis();
+
+      // 3. Init Picker
+      await initPicker(accessToken, apiKey, clientId);
+
+      // 4. Show Picker
+      showPicker(accessToken, apiKey, clientId, (id: string, name: string) => {
+        setFormData(prev => ({ ...prev, sheetId: id }));
+        setSheetTitle(name);
+        
+        // Auto fill Connection Name if empty
+        if (!formData.name) {
+          setFormData(prev => ({ ...prev, name }));
+        }
+      });
+    } catch (err: any) {
+      console.error("[GOOGLE_PICKER_ERROR]", err);
+      alert("Lỗi khi mở thư viện chọn file Google Sheet: " + err.message);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.oauthConnectionId) return;
+    if (!formData.oauthConnectionId || !formData.sheetId) return;
     
     setLoading(true)
 
@@ -92,6 +202,7 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
           config: {
             sheetId: formData.sheetId,
             sheetName: formData.sheetName,
+            sheetTitle: sheetTitle,
             conversionDateCol: formData.conversionDateCol,
             phoneCol: formData.phoneCol,
             conversionValueCol: formData.conversionValueCol,
@@ -162,6 +273,47 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
             )}
           </div>
 
+          {/* Google Sheet Selector Button */}
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Google Sheet File</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={pickerLoading || !formData.oauthConnectionId}
+                onClick={handleOpenPicker}
+                className="px-4 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary)]/80 text-[var(--text-1)] text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {pickerLoading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Đang mở Picker...
+                  </>
+                ) : (
+                  <>
+                    Chọn file Google Sheet
+                  </>
+                )}
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                {sheetTitle ? (
+                  <p className="text-xs font-semibold text-[var(--text-1)] truncate m-0">
+                    {sheetTitle}
+                  </p>
+                ) : (
+                  <p className="text-xs text-[var(--text-3)] italic m-0">
+                    Chưa chọn file Google Sheet
+                  </p>
+                )}
+                {formData.sheetId && (
+                  <p className="text-[10px] text-[var(--text-3)] truncate m-0 mt-0.5">
+                    ID: {formData.sheetId}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Tên kết nối</label>
@@ -172,22 +324,13 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Tên Sheet</label>
+              <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Tên Sheet (Tab)</label>
               <input
                 type="text" required placeholder="Ví dụ: Trang tính 1"
                 value={formData.sheetName} onChange={e => setFormData({ ...formData, sheetName: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-1)] outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-xs font-medium"
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Google Sheet ID</label>
-            <input
-              type="text" required placeholder="ID từ URL của Google Sheet"
-              value={formData.sheetId} onChange={e => setFormData({ ...formData, sheetId: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-1)] outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-xs font-medium"
-            />
           </div>
 
           {/* Column Mapping Section */}
@@ -238,7 +381,7 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
               Hủy
             </button>
             <button
-              type="submit" disabled={loading || !formData.oauthConnectionId}
+              type="submit" disabled={loading || !formData.oauthConnectionId || !formData.sheetId}
               className="flex-1 py-3 rounded-[calc(var(--radius)*0.8)] border-0 bg-[var(--text-1)] text-[var(--bg-card)] font-bold transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2 text-xs cursor-pointer disabled:opacity-50"
             >
               {loading ? (

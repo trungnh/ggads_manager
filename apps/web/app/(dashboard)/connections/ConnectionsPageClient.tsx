@@ -472,7 +472,7 @@ export default function ConnectionsPageClient({
                         <p className="text-xs font-semibold truncate text-[var(--text-2)]">
                           {conn.type === 'pancake' 
                             ? (conn.pancakeAccountId ? 'Tài khoản đã gán' : 'Chưa gán account')
-                            : (conn.config.sheetName || 'N/A')
+                            : (conn.config.sheetTitle || conn.config.sheetId || 'N/A')
                           }
                         </p>
                       </div>
@@ -481,7 +481,7 @@ export default function ConnectionsPageClient({
                         <p className="text-xs font-semibold truncate text-[var(--text-2)]">
                           {conn.type === 'pancake'
                             ? (conn.config.productDisplayId ? `ID: ${conn.config.productDisplayId}` : 'Toàn bộ Shop')
-                            : (conn.config.range || 'N/A')
+                            : (conn.config.sheetName ? `Tab: ${conn.config.sheetName}` : 'N/A')
                           }
                         </p>
                       </div>
