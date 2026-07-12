@@ -149,7 +149,9 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
       const res = await fetch(`/api/google/sheets?sheetId=${id}&connectionId=${connectionId}`);
       
       if (!res.ok) {
-        throw new Error("Lỗi khi tải danh sách sheet từ máy chủ.");
+        const errorData = await res.json().catch(() => ({}));
+        const detailsStr = errorData.details ? `: ${JSON.stringify(errorData.details)}` : '';
+        throw new Error((errorData.error || "Lỗi khi tải danh sách sheet từ máy chủ.") + detailsStr);
       }
 
       const data = await res.json();

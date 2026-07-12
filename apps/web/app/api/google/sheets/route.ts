@@ -40,6 +40,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ sheets: titles });
   } catch (error: any) {
     console.error('[API_GOOGLE_SHEETS_ERROR]', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch sheets' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || 'Failed to fetch sheets',
+      details: error.response?.data || null
+    }, { status: 500 });
   }
 }
