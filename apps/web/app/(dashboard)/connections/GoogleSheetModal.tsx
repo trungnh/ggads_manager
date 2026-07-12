@@ -54,7 +54,7 @@ const showPicker = (accessToken: string, developerKey: string, clientId: string,
     .addView(view)
     .setOAuthToken(accessToken)
     .setDeveloperKey(developerKey)
-    .setAppId(clientId.split('-')[0])
+    .setOrigin(window.location.origin)
     .setCallback((data: any) => {
       if (data[(window as any).google.picker.Response.ACTION] === (window as any).google.picker.Action.PICKED) {
         const doc = data[(window as any).google.picker.Response.DOCUMENTS][0];
