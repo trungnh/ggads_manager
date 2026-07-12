@@ -146,22 +146,14 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
     if (!id || !connectionId) return;
     setLoadingSheets(true);
     try {
-      const tokenRes = await fetch(`/api/oauth/token?connectionId=${connectionId}`);
-      if (!tokenRes.ok) throw new Error("Không thể lấy token xác thực.");
-      const { accessToken } = await tokenRes.json();
-
-      const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties.title`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
+      const res = await fetch(`/api/google/sheets?sheetId=${id}&connectionId=${connectionId}`);
       
       if (!res.ok) {
-        throw new Error("Lỗi khi tải danh sách sheet từ Google.");
+        throw new Error("Lỗi khi tải danh sách sheet từ máy chủ.");
       }
 
       const data = await res.json();
-      const titles = data.sheets?.map((s: any) => s.properties?.title).filter(Boolean) || [];
+      const titles = data.sheets || [];
       setSheetsList(titles);
       
       // Auto select the first sheet if current sheetName is empty or not in the list
