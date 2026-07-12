@@ -121,6 +121,9 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
     }
   }, [initialData, isOpen])
 
+  const [sheetsList, setSheetsList] = useState<string[]>([])
+  const [loadingSheets, setLoadingSheets] = useState(false)
+
   const fetchConnections = async () => {
     setLoadingConnections(true)
     try {
@@ -138,6 +141,48 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
       setLoadingConnections(false)
     }
   }
+
+  const fetchSheetsOfFile = async (id: string, connectionId: string) => {
+    if (!id || !connectionId) return;
+    setLoadingSheets(true);
+    try {
+      const tokenRes = await fetch(`/api/oauth/token?connectionId=${connectionId}`);
+      if (!tokenRes.ok) throw new Error("Không thể lấy token xác thực.");
+      const { accessToken } = await tokenRes.json();
+
+      const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties.title`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error("Lỗi khi tải danh sách sheet từ Google.");
+      }
+
+      const data = await res.json();
+      const titles = data.sheets?.map((s: any) => s.properties?.title).filter(Boolean) || [];
+      setSheetsList(titles);
+      
+      // Auto select the first sheet if current sheetName is empty or not in the list
+      if (titles.length > 0 && (!formData.sheetName || !titles.includes(formData.sheetName))) {
+        setFormData(prev => ({ ...prev, sheetName: titles[0] }));
+      }
+    } catch (err: any) {
+      console.error("[FETCH_SHEETS_ERROR]", err);
+      setSheetsList([]);
+    } finally {
+      setLoadingSheets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && formData.sheetId && formData.oauthConnectionId) {
+      fetchSheetsOfFile(formData.sheetId, formData.oauthConnectionId);
+    } else if (!formData.sheetId) {
+      setSheetsList([]);
+    }
+  }, [formData.sheetId, formData.oauthConnectionId, isOpen]);
 
   const handleOpenPicker = async () => {
     if (!formData.oauthConnectionId) {
@@ -325,11 +370,29 @@ export default function GoogleSheetModal({ isOpen, onClose, onSave, initialData 
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-[var(--text-2)] uppercase tracking-wider">Tên Sheet (Tab)</label>
-              <input
-                type="text" required placeholder="Ví dụ: Trang tính 1"
-                value={formData.sheetName} onChange={e => setFormData({ ...formData, sheetName: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-1)] outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-xs font-medium"
-              />
+              {loadingSheets ? (
+                <div className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-3)] text-xs flex items-center gap-2 font-medium">
+                  <Loader2 size={12} className="animate-spin" />
+                  Đang tải danh sách các sheet...
+                </div>
+              ) : sheetsList.length > 0 ? (
+                <select
+                  required
+                  value={formData.sheetName}
+                  onChange={e => setFormData({ ...formData, sheetName: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-1)] outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-xs font-medium cursor-pointer"
+                >
+                  {sheetsList.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text" required placeholder="Ví dụ: Trang tính 1"
+                  value={formData.sheetName} onChange={e => setFormData({ ...formData, sheetName: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-1)] outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-xs font-medium"
+                />
+              )}
             </div>
           </div>
 
