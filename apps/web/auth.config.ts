@@ -82,7 +82,7 @@ export const authConfig = {
       // 2. Handle Google OAuth connection/linking (Strictly Decoupled)
       if (account && account.provider === 'google' && account.access_token) {
         const { db, oauthConnections, users } = await import('@repo/db');
-        const { eq } = await import('drizzle-orm');
+        const { eq, and } = await import('drizzle-orm');
         const { cookies } = await import('next/headers');
 
         const oauthEmail = profile?.email || (account as any).email;
@@ -116,6 +116,15 @@ export const authConfig = {
           // Just save the token, DO NOT change token.id, DO NOT look up user by oauthEmail
           const expiresAt = new Date(Date.now() + (account.expires_in as number) * 1000);
           
+          // A1. Find existing connection to get its ID for cache invalidation
+          const existingConn = await db.query.oauthConnections.findFirst({
+            where: and(
+              eq(oauthConnections.userId, targetSystemUserId),
+              eq(oauthConnections.provider, 'google'),
+              eq(oauthConnections.email, oauthEmail)
+            )
+          });
+
           await db.insert(oauthConnections).values({
             userId: targetSystemUserId,
             provider: 'google',
@@ -132,6 +141,21 @@ export const authConfig = {
               updatedAt: new Date(),
             }
           });
+
+          // A2. Invalidate Redis cache so TokenService doesn't read the old access token from cache
+          try {
+            const { Redis } = await import('ioredis');
+            const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+              maxRetriesPerRequest: 3,
+            });
+            if (existingConn) {
+              await redisClient.del(`token:conn:${existingConn.id}`);
+            }
+            await redisClient.del(`token:user:${targetSystemUserId}:${oauthEmail}`);
+            await redisClient.quit().catch(() => {});
+          } catch (redisErr) {
+            console.error('Failed to invalidate Redis token cache:', redisErr);
+          }
 
           // Restore all token attributes to the system user's attributes (no switching!)
           token.id = userExists.id;

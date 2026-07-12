@@ -47,6 +47,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Failed to retrieve email from Google' }, { status: 400 });
     }
 
+    // Find existing connection to get its ID for cache invalidation
+    const { and } = await import('drizzle-orm');
+    const existingConn = await db.query.oauthConnections.findFirst({
+      where: and(
+        eq(oauthConnections.userId, session.user.id),
+        eq(oauthConnections.provider, 'google'),
+        eq(oauthConnections.email, email)
+      )
+    });
+
     // Save or update tokens in DB
     await db.insert(oauthConnections)
       .values({
@@ -68,6 +78,21 @@ export async function GET(req: Request) {
           updatedAt: new Date(),
         }
       });
+
+    // Invalidate Redis cache
+    try {
+      const { Redis } = await import('ioredis');
+      const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        maxRetriesPerRequest: 3,
+      });
+      if (existingConn) {
+        await redisClient.del(`token:conn:${existingConn.id}`);
+      }
+      await redisClient.del(`token:user:${session.user.id}:${email}`);
+      await redisClient.quit().catch(() => {});
+    } catch (redisErr) {
+      console.error('Failed to invalidate Redis token cache in callback:', redisErr);
+    }
 
     // Redirect to accounts page to start sync
     return NextResponse.redirect(new URL('/accounts/new?connected=true', req.url));
