@@ -34,10 +34,12 @@ const formatVNDShort = (value: number) => {
 
 export default function PerformanceChart({ 
   data = [], 
-  rangeLabel = "today" 
+  rangeLabel = "today",
+  isSingleDay = false
 }: { 
   data?: ChartDataPoint[], 
-  rangeLabel?: string 
+  rangeLabel?: string,
+  isSingleDay?: boolean
 }) {
   const [mounted, setMounted] = useState(false)
 
@@ -54,11 +56,21 @@ export default function PerformanceChart({
   }
 
   // Tính toán tổng quan trong khoảng bộ lọc chọn
-  const totalCost = data.reduce((acc, d) => acc + d.cost, 0)
-  const totalLeads = data.reduce((acc, d) => acc + d.leads, 0)
-  const averageRoas = data.length > 0 
-    ? Number((data.reduce((acc, d) => acc + d.roas, 0) / data.length).toFixed(2))
-    : 0;
+  const lastPoint = data[data.length - 1];
+
+  const totalCost = isSingleDay 
+    ? (lastPoint ? lastPoint.cost : 0)
+    : data.reduce((acc, d) => acc + d.cost, 0);
+
+  const totalLeads = isSingleDay
+    ? (lastPoint ? lastPoint.leads : 0)
+    : data.reduce((acc, d) => acc + d.leads, 0);
+
+  const averageRoas = isSingleDay
+    ? (lastPoint ? lastPoint.roas : 0)
+    : (data.length > 0 
+        ? Number((data.reduce((acc, d) => acc + d.roas, 0) / data.length).toFixed(2))
+        : 0);
 
   const getRangeLabelText = (label: string) => {
     if (label === "today") return "Hôm nay (7 ngày qua)"
@@ -165,14 +177,15 @@ export default function PerformanceChart({
               }}
             />
 
-            {/* Spend visual represented as soft area flow */}
-            <Area
+            {/* Spend visual represented as line */}
+            <Line
               yAxisId="left"
               type="monotone"
               dataKey="cost"
-              fill="rgba(59, 109, 17, 0.08)"
-              stroke="#3B6D11"
-              strokeWidth={1.5}
+              stroke="#10B981"
+              strokeWidth={2}
+              dot={{ r: 3, strokeWidth: 1.5, fill: 'var(--bg-card)' }}
+              activeDot={{ r: 5 }}
             />
 
             {/* CRM Leads line */}

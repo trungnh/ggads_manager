@@ -274,6 +274,7 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
             roas: d.roas
           }))} 
           rangeLabel={startDate === endDate ? `Báo cáo ngày ${startDate}` : `Khoảng ngày ${startDate} đến ${endDate}`} 
+          isSingleDay={startDate === endDate}
         />
       ) : null}
 
