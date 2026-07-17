@@ -35,6 +35,7 @@ const NAV = [
     section: 'Báo cáo & Phân tích',
     items: [
       { href: '/dashboard',   icon: LayoutGrid,  label: 'Bảng tổng quan' },
+      { href: '/revenue/overview', icon: TrendingUp, label: 'Tổng quan Doanh thu' },
       { href: '/revenue',     icon: LineChart,   label: 'Thống kê Doanh thu' },
     ],
   },

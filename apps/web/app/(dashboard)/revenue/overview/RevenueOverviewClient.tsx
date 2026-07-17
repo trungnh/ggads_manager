@@ -13,7 +13,7 @@ import {
   CalendarDays,
   FileSpreadsheet
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -81,7 +81,7 @@ export default function RevenueOverviewClient({
 
   const overallProfitPercent = totals.revenue > 0 ? (totals.profit / totals.revenue) * 100 : 0;
   const overallRoas = totals.adsCost > 0 ? totals.revenue / totals.adsCost : 0;
-  const overallAdsPercent = totals.revenue > 0 ? (totals.adsCost / totals.revenue) * 100 : 0;
+  const overallAdsPercent = totals.revenue > 0 ? (totals.adsCost / totals.revenue) * 105 : 0;
 
   // Format Helper
   const formatCurrency = (val: number) => {
@@ -91,203 +91,189 @@ export default function RevenueOverviewClient({
 
   const formatGrowth = (val: number | null) => {
     if (val === null) return "NaN%";
-    const sign = val >= 0 ? "+" : "";
-    return `${sign}${val.toFixed(1)}%`;
+    const sign = val >= 0 ? "↑" : "↓";
+    return `${sign} ${Math.abs(val).toFixed(1)}%`;
   };
 
   return (
     <div className="p-6 space-y-6">
       
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/revenue" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Tổng quan Báo cáo Doanh thu</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Phân tích tổng hợp hiệu quả tài chính và so sánh tăng trưởng hàng tháng.
-            </p>
+      {/* Header Banner - styled with a premium background banner matching the reference design */}
+      <div className="bg-slate-900 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <Link href="/revenue" className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                Tổng Quan
+              </h1>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Báo cáo tổng hợp doanh thu của tất cả sản phẩm
+              </p>
+            </div>
+          </div>
+          
+          {/* Month selector inside the banner */}
+          <div className="flex items-center gap-2">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="h-9 rounded-lg border-0 text-xs px-3 bg-white text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm"
+            >
+              {monthOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select 
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="h-9 rounded-md border border-slate-250 dark:border-slate-850 text-xs px-3 bg-white dark:bg-slate-950 text-slate-850 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-          >
-            {monthOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
+        {/* KPI Cards inside the banner */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          <Link href="/revenue" className={cn("text-xs h-9 px-4 rounded-md border border-slate-200 dark:border-slate-850 hover:bg-slate-50 hover:dark:bg-slate-900 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950/20 flex items-center gap-1.5 font-medium")}>
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-            Trang Thống kê
-          </Link>
-        </div>
-      </div>
-
-      {/* KPI Cards section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Total Orders Card */}
-        <Card className="glass-card border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden bg-white dark:bg-slate-950/40 relative rounded-xl">
-          <CardHeader className="pb-2">
+          {/* Total Orders Card */}
+          <div className="bg-white text-slate-900 rounded-xl p-4 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
-              <span className="text-xs font-bold text-slate-550 dark:text-slate-400 tracking-wider uppercase">TỔNG ĐƠN HÀNG</span>
-              <div className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-650 dark:text-rose-400">
+              <div>
+                <span className="text-[10px] font-bold text-slate-450 tracking-wider uppercase">TỔNG ĐƠN</span>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {totals.orders.toLocaleString("vi-VN")}
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-rose-50 text-rose-600 shrink-0">
                 <ShoppingCart className="w-4 h-4" />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-slate-850 dark:text-slate-100">
-              {totals.orders.toLocaleString("vi-VN")}
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              {comparison.orders !== null && comparison.orders >= 0 ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
-                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
+            <div className="flex items-center gap-1 text-[11px] mt-3">
+              {comparison.orders !== null ? (
+                <span className={cn("font-bold flex items-center", comparison.orders >= 0 ? "text-emerald-600" : "text-rose-600")}>
                   {formatGrowth(comparison.orders)}
                 </span>
               ) : (
-                <span className="text-rose-605 dark:text-rose-450 font-bold flex items-center">
-                  <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
-                  {formatGrowth(comparison.orders)}
-                </span>
+                <span className="text-slate-400 font-medium">--</span>
               )}
-              <span className="text-slate-500 dark:text-slate-400">so với tháng trước</span>
+              <span className="text-slate-500">So với tháng trước</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Total Revenue Card */}
-        <Card className="glass-card border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden bg-white dark:bg-slate-950/40 relative rounded-xl">
-          <CardHeader className="pb-2">
+          {/* Total Revenue Card */}
+          <div className="bg-white text-slate-900 rounded-xl p-4 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
-              <span className="text-xs font-bold text-slate-550 dark:text-slate-400 tracking-wider uppercase">DOANH THU THỰC</span>
-              <div className="p-2 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-650 dark:text-amber-400">
+              <div>
+                <span className="text-[10px] font-bold text-slate-450 tracking-wider uppercase">DOANH THU</span>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {formatCurrency(totals.revenue)}
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-amber-50 text-amber-600 shrink-0">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-slate-850 dark:text-slate-100">
-              {formatCurrency(totals.revenue)}
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              {comparison.revenue !== null && comparison.revenue >= 0 ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
-                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
+            <div className="flex items-center gap-1 text-[11px] mt-3">
+              {comparison.revenue !== null ? (
+                <span className={cn("font-bold flex items-center", comparison.revenue >= 0 ? "text-emerald-600" : "text-rose-600")}>
                   {formatGrowth(comparison.revenue)}
                 </span>
               ) : (
-                <span className="text-rose-605 dark:text-rose-450 font-bold flex items-center">
-                  <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
-                  {formatGrowth(comparison.revenue)}
-                </span>
+                <span className="text-slate-400 font-medium">--</span>
               )}
-              <span className="text-slate-500 dark:text-slate-400">so với tháng trước</span>
+              <span className="text-slate-500">So với tháng trước</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Total Ads Cost Card */}
-        <Card className="glass-card border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden bg-white dark:bg-slate-950/40 relative rounded-xl">
-          <CardHeader className="pb-2">
+          {/* Total Ads Cost Card */}
+          <div className="bg-white text-slate-900 rounded-xl p-4 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
-              <span className="text-xs font-bold text-slate-550 dark:text-slate-400 tracking-wider uppercase">CHI PHÍ QUẢNG CÁO</span>
-              <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-650 dark:text-emerald-400">
+              <div>
+                <span className="text-[10px] font-bold text-slate-450 tracking-wider uppercase">TIỀN ADS</span>
+                <div className="text-xl font-black text-slate-900 mt-1">
+                  {formatCurrency(totals.adsCost)}
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                 <Percent className="w-4 h-4" />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-slate-850 dark:text-slate-100">
-              {formatCurrency(totals.adsCost)}
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              {comparison.adsCost !== null && comparison.adsCost <= 0 ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
-                  <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
+            <div className="flex items-center gap-1 text-[11px] mt-3">
+              {comparison.adsCost !== null ? (
+                <span className={cn("font-bold flex items-center", comparison.adsCost <= 0 ? "text-emerald-600" : "text-rose-600")}>
                   {formatGrowth(comparison.adsCost)}
                 </span>
               ) : (
-                <span className="text-rose-605 dark:text-rose-450 font-bold flex items-center">
-                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
-                  {formatGrowth(comparison.adsCost)}
-                </span>
+                <span className="text-slate-400 font-medium">--</span>
               )}
-              <span className="text-slate-500 dark:text-slate-400">so với tháng trước</span>
+              <span className="text-slate-500">So với tháng trước</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Total Profit Card */}
-        <Card className="glass-card border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden bg-white dark:bg-slate-950/40 relative rounded-xl">
-          <CardHeader className="pb-2">
+          {/* Total Profit Card */}
+          <div className="bg-white text-slate-900 rounded-xl p-4 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
-              <span className="text-xs font-bold text-slate-550 dark:text-slate-400 tracking-wider uppercase">LỢI NHUẬN RÒNG</span>
-              <div className="p-2 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-650 dark:text-sky-400">
+              <div>
+                <span className="text-[10px] font-bold text-slate-450 tracking-wider uppercase">LỢI NHUẬN</span>
+                <div className="text-xl font-black text-slate-900 mt-1 flex items-baseline gap-1">
+                  {formatCurrency(totals.profit)}
+                  <span className="text-xs text-slate-500 font-normal">
+                    ({overallProfitPercent.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-sky-50 text-sky-650 shrink-0">
                 <BarChart3 className="w-4 h-4" />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-slate-850 dark:text-slate-100 flex items-baseline gap-1">
-              {formatCurrency(totals.profit)}
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                ({overallProfitPercent.toFixed(1)}%)
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              {comparison.profit !== null && comparison.profit >= 0 ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
-                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
+            <div className="flex items-center gap-1 text-[11px] mt-3">
+              {comparison.profit !== null ? (
+                <span className={cn("font-bold flex items-center", comparison.profit >= 0 ? "text-emerald-600" : "text-rose-600")}>
                   {formatGrowth(comparison.profit)}
                 </span>
               ) : (
-                <span className="text-rose-605 dark:text-rose-450 font-bold flex items-center">
-                  <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
-                  {formatGrowth(comparison.profit)}
-                </span>
+                <span className="text-slate-400 font-medium">--</span>
               )}
-              <span className="text-slate-500 dark:text-slate-400">so với tháng trước</span>
+              <span className="text-slate-500">So với tháng trước</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
+        </div>
+      </div>
+
+      {/* Table Section Title */}
+      <div className="flex items-center justify-between pt-2">
+        <h2 className="text-sm font-bold text-[var(--text-1)] uppercase tracking-wider flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-slate-550 dark:text-slate-450" />
+          Tổng quan theo ngày
+        </h2>
+        
+        <Link href="/revenue" className="text-xs text-emerald-600 dark:text-emerald-500 font-semibold hover:underline flex items-center gap-1">
+          <FileSpreadsheet className="w-4.5 h-4.5" />
+          Xem chi tiết sản phẩm
+        </Link>
       </div>
 
       {/* Daily list table */}
-      <Card className="glass-card border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden bg-white dark:bg-slate-950/40 rounded-xl">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-950/50 border-b border-slate-150 dark:border-slate-900 py-3.5 px-6 flex flex-row items-center gap-2">
-          <CalendarDays className="w-4.5 h-4.5 text-slate-650 dark:text-slate-450" />
-          <CardTitle className="text-sm font-semibold text-slate-850 dark:text-slate-200">Biểu đồ Tổng hợp theo Ngày</CardTitle>
-        </CardHeader>
+      <Card className="bg-[var(--bg-card)] border border-[var(--border)] shadow-sm overflow-hidden rounded-xl">
         <CardContent className="p-0 overflow-x-auto">
           <Table className="min-w-[1250px] border-collapse text-xs">
-            <TableHeader className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-900">
-              <TableRow>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 w-24">Ngày</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-center w-16">Đơn</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-center w-16">SL</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-right w-28">Tiền hàng (COGS)</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-right w-28">Tiền Ads</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-right w-24">Vận chuyển</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-right w-24">Tiền hoàn</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-right w-28">Tổng chi</TableHead>
-                <TableHead className="font-bold text-rose-700 dark:text-rose-450 text-right w-28">Doanh thu</TableHead>
-                <TableHead className="font-bold text-emerald-700 dark:text-emerald-400 text-right w-32 bg-emerald-50/20 dark:bg-emerald-950/15">Lợi Nhuận</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-center w-16">% Ads</TableHead>
-                <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-center w-16">ROAS</TableHead>
+            <TableHeader className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800">
+              <TableRow className="hover:bg-slate-900">
+                <TableHead className="font-bold text-white uppercase text-center w-24">Ngày</TableHead>
+                <TableHead className="font-bold text-white uppercase text-center w-16">Đơn</TableHead>
+                <TableHead className="font-bold text-white uppercase text-center w-16">SL</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-28 pr-3">Tiền hàng</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-28 pr-3">Tiền Ads</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-24 pr-3">Vận chuyển</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-24 pr-3">Tiền hoàn</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-28 pr-3">Tổng chi</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-28 pr-3">Doanh thu</TableHead>
+                <TableHead className="font-bold text-white uppercase text-right w-32 pr-3">Lợi Nhuận</TableHead>
+                <TableHead className="font-bold text-white uppercase text-center w-20">% Ads</TableHead>
+                <TableHead className="font-bold text-white uppercase text-center w-20">ROAS</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="divide-y divide-slate-200 dark:divide-slate-900/80">
+            <TableBody className="divide-y divide-[var(--border)]">
               {dailyData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-10 text-slate-450 dark:text-slate-400 text-sm">
+                  <TableCell colSpan={12} className="text-center py-10 text-[var(--text-3)] text-sm">
                     Không có dữ liệu cho tháng này.
                   </TableCell>
                 </TableRow>
@@ -299,98 +285,104 @@ export default function RevenueOverviewClient({
                     const rowProfitPercent = day.revenue > 0 ? (day.profit / day.revenue) * 100 : 0;
 
                     return (
-                      <TableRow key={day.date} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
-                        <TableCell className="font-semibold text-slate-650 dark:text-slate-350">
+                      <TableRow key={day.date} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                        <TableCell className="text-center font-semibold text-[var(--text-2)]">
                           {new Date(day.date).toLocaleDateString('vi-VN')}
                         </TableCell>
-                        <TableCell className="text-center text-slate-800 dark:text-slate-200 font-semibold">
+                        <TableCell className="text-center text-[var(--text-1)] font-semibold">
                           {day.orders.toLocaleString("vi-VN")}
                         </TableCell>
-                        <TableCell className="text-center text-slate-800 dark:text-slate-200 font-semibold">
+                        <TableCell className="text-center text-[var(--text-2)] font-semibold">
                           {day.quantity.toLocaleString("vi-VN")}
                         </TableCell>
-                        <TableCell className="text-right text-slate-600 dark:text-slate-400 font-normal pr-3">
-                          {day.goodsCost > 0 ? Math.round(day.goodsCost).toLocaleString("vi-VN") : "-"}
+                        <TableCell className="text-right text-[var(--text-2)] pr-3">
+                          {day.goodsCost > 0 ? Math.round(day.goodsCost).toLocaleString("vi-VN") : "0"}
                         </TableCell>
-                        <TableCell className="text-right text-rose-600 font-semibold pr-3">
-                          {day.adsCost > 0 ? Math.round(day.adsCost).toLocaleString("vi-VN") : "-"}
+                        <TableCell className="text-right text-[var(--text-2)] pr-3">
+                          {day.adsCost > 0 ? Math.round(day.adsCost).toLocaleString("vi-VN") : "0"}
                         </TableCell>
-                        <TableCell className="text-right text-slate-600 dark:text-slate-400 font-normal pr-3">
-                          {day.shipCost > 0 ? Math.round(day.shipCost).toLocaleString("vi-VN") : "-"}
+                        <TableCell className="text-right text-[var(--text-2)] pr-3">
+                          {day.shipCost > 0 ? Math.round(day.shipCost).toLocaleString("vi-VN") : "0"}
                         </TableCell>
-                        <TableCell className="text-right text-slate-600 dark:text-slate-400 font-normal pr-3">
-                          {day.returnCost > 0 ? Math.round(day.returnCost).toLocaleString("vi-VN") : "-"}
+                        <TableCell className="text-right text-[var(--text-2)] pr-3">
+                          {day.returnCost > 0 ? Math.round(day.returnCost).toLocaleString("vi-VN") : "0"}
                         </TableCell>
-                        <TableCell className="text-right text-slate-700 dark:text-slate-300 font-semibold pr-3">
-                          {day.totalCost > 0 ? Math.round(day.totalCost).toLocaleString("vi-VN") : "-"}
+                        <TableCell className="text-right text-[var(--text-2)] pr-3">
+                          {day.totalCost > 0 ? Math.round(day.totalCost).toLocaleString("vi-VN") : "0"}
                         </TableCell>
-                        <TableCell className="text-right text-slate-850 dark:text-slate-100 font-bold pr-3">
-                          {day.revenue > 0 ? Math.round(day.revenue).toLocaleString("vi-VN") : "-"}
+                        {/* Highlighted Bold Red/Coral text for Doanh thu as requested */}
+                        <TableCell className="text-right text-rose-600 dark:text-rose-400 font-bold pr-3">
+                          {day.revenue > 0 ? Math.round(day.revenue).toLocaleString("vi-VN") : "0"}
                         </TableCell>
+                        {/* Bold Red/Green text for Lợi nhuận */}
                         <TableCell className={cn(
-                          "text-right font-bold pr-3 bg-emerald-50/20 dark:bg-emerald-950/5 text-[12.5px]",
-                          day.profit > 0 ? "text-emerald-600 dark:text-emerald-400" : day.profit < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-650 dark:text-slate-400"
+                          "text-right font-bold pr-3 text-[12.5px]",
+                          day.profit > 0 
+                            ? "text-emerald-600 dark:text-emerald-400" 
+                            : day.profit < 0 
+                              ? "text-rose-600 dark:text-rose-400" 
+                              : "text-[var(--text-2)]"
                         )}>
                           {day.profit !== 0 ? Math.round(day.profit).toLocaleString("vi-VN") : "0"}
                           {day.revenue > 0 && (
-                            <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal ml-1">
+                            <span className="text-[10px] text-slate-405 dark:text-slate-500 font-normal ml-1">
                               ({rowProfitPercent.toFixed(1)}%)
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center font-medium text-slate-600 dark:text-slate-400">
-                          {rowAdsPercent > 0 ? rowAdsPercent.toFixed(1) + "%" : "--"}
+                        <TableCell className="text-center font-medium text-[var(--text-2)]">
+                          {rowAdsPercent > 0 ? rowAdsPercent.toFixed(1) + "%" : "0.0%"}
                         </TableCell>
-                        <TableCell className="text-center font-semibold text-slate-850 dark:text-slate-200">
-                          {rowRoas > 0 ? rowRoas.toFixed(2) : "--"}
+                        <TableCell className="text-center font-bold text-[var(--text-1)]">
+                          {rowRoas > 0 ? rowRoas.toFixed(2) : "0.00"}
                         </TableCell>
                       </TableRow>
                     );
                   })}
 
-                  {/* Summary Totals Row */}
-                  <TableRow className="bg-slate-100/90 dark:bg-slate-900/80 font-bold border-t border-slate-200 dark:border-slate-800 hover:bg-slate-200/50 dark:hover:bg-slate-900">
-                    <TableCell className="font-bold text-slate-800 dark:text-slate-200">Tổng cộng</TableCell>
-                    <TableCell className="text-center text-slate-800 dark:text-slate-200 font-bold">
+                  {/* Summary Totals Row at the bottom of the list */}
+                  <TableRow className="bg-slate-100 dark:bg-slate-900 font-bold border-t border-[var(--border)] hover:bg-slate-200/50 dark:hover:bg-slate-900/80">
+                    <TableCell className="text-center font-bold text-[var(--text-1)]">Tổng cộng</TableCell>
+                    <TableCell className="text-center text-[var(--text-1)] font-bold">
                       {totals.orders.toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-center text-slate-800 dark:text-slate-200 font-bold">
+                    <TableCell className="text-center text-[var(--text-1)] font-bold">
                       {dailyData.reduce((s, r) => s + r.quantity, 0).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700 dark:text-slate-300 font-bold pr-3">
+                    <TableCell className="text-right text-[var(--text-1)] font-bold pr-3">
                       {Math.round(dailyData.reduce((s, r) => s + r.goodsCost, 0)).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-rose-700 dark:text-rose-450 font-bold pr-3">
+                    <TableCell className="text-right text-[var(--text-1)] font-bold pr-3">
                       {Math.round(totals.adsCost).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700 dark:text-slate-300 font-bold pr-3">
+                    <TableCell className="text-right text-[var(--text-1)] font-bold pr-3">
                       {Math.round(dailyData.reduce((s, r) => s + r.shipCost, 0)).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700 dark:text-slate-300 font-bold pr-3">
+                    <TableCell className="text-right text-[var(--text-1)] font-bold pr-3">
                       {Math.round(dailyData.reduce((s, r) => s + r.returnCost, 0)).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700 dark:text-slate-300 font-bold pr-3">
+                    <TableCell className="text-right text-[var(--text-1)] font-bold pr-3">
                       {Math.round(dailyData.reduce((s, r) => s + r.totalCost, 0)).toLocaleString("vi-VN")}
                     </TableCell>
-                    <TableCell className="text-right text-slate-850 dark:text-slate-100 font-extrabold pr-3">
-                      {Math.round(totals.revenue).toLocaleString("vi-VN")} đ
+                    <TableCell className="text-right text-rose-600 dark:text-rose-450 font-extrabold pr-3">
+                      {Math.round(totals.revenue).toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell className={cn(
-                      "text-right font-extrabold pr-3 bg-emerald-50 dark:bg-emerald-950/15 text-sm",
-                      totals.profit > 0 ? "text-emerald-600 dark:text-emerald-400" : totals.profit < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-800 dark:text-slate-202"
+                      "text-right font-extrabold pr-3 bg-emerald-50/20 dark:bg-emerald-950/5 text-sm",
+                      totals.profit > 0 ? "text-emerald-600 dark:text-emerald-400" : totals.profit < 0 ? "text-rose-600 dark:text-rose-400" : "text-[var(--text-1)]"
                     )}>
-                      {Math.round(totals.profit).toLocaleString("vi-VN")} đ
+                      {Math.round(totals.profit).toLocaleString("vi-VN")}
                       {totals.revenue > 0 && (
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold ml-1">
                           ({overallProfitPercent.toFixed(1)}%)
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-bold text-slate-750 dark:text-slate-300">
-                      {overallAdsPercent > 0 ? overallAdsPercent.toFixed(1) + "%" : "--"}
+                    <TableCell className="text-center font-bold text-[var(--text-1)]">
+                      {overallAdsPercent > 0 ? (totals.adsCost / totals.revenue * 100).toFixed(1) + "%" : "0.0%"}
                     </TableCell>
-                    <TableCell className="text-center font-bold text-slate-800 dark:text-slate-200">
-                      {overallRoas > 0 ? overallRoas.toFixed(2) : "--"}
+                    <TableCell className="text-center font-bold text-[var(--text-1)]">
+                      {overallRoas > 0 ? overallRoas.toFixed(2) : "0.00"}
                     </TableCell>
                   </TableRow>
                 </>
