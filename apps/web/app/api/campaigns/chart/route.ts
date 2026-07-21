@@ -80,6 +80,29 @@ export async function GET(request: Request) {
     const isSingleDay = start === end;
 
     if (isSingleDay) {
+      // 1. Fetch daily snapshot totals to serve as target values
+      const dailyData = await db.select({
+        costMicros: campaignsSnapshot.costMicros,
+        conversions: campaignsSnapshot.googleConversions,
+        realConversions: campaignsSnapshot.realConversions,
+        successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
+      })
+      .from(campaignsSnapshot)
+      .where(and(
+        eq(campaignsSnapshot.customerId, customerId),
+        campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
+        eq(campaignsSnapshot.date, start)
+      ));
+
+      let targetCost = 0;
+      let targetConvs = 0;
+      let targetRev = 0;
+      for (const d of dailyData) {
+        targetCost += parseInt(d.costMicros || '0') / 1000000;
+        targetConvs += d.realConversions || parseFloat(d.conversions || '0');
+        targetRev += parseInt(d.successRevMicros || '0') / 1000000;
+      }
+
       // Construct date boundaries for the single day query in Local Time zone
       const startOfDay = new Date(`${start}T00:00:00`);
       const endOfDay = new Date(`${start}T23:59:59`);
@@ -107,7 +130,6 @@ export async function GET(request: Request) {
         
         for (const d of data) {
           if (!d.slotTs) continue;
-          // Format slotTs in Ho Chi Minh timezone
           const timeKey = d.slotTs.toLocaleTimeString('en-US', {
             timeZone: 'Asia/Ho_Chi_Minh',
             hour12: false,
@@ -116,7 +138,8 @@ export async function GET(request: Request) {
           });
           
           const cost = parseInt(d.costMicros || '0') / 1000000;
-          const conv = d.conversionsSuccess || d.conversions || 0;
+          // Use total conversions delta directly to prevent doubling when order status updates from pending to success
+          const conv = d.conversions || 0;
           const rev = parseInt(d.successRevMicros || '0') / 1000000;
           
           if (!slotAgg[timeKey]) {
@@ -125,6 +148,50 @@ export async function GET(request: Request) {
           slotAgg[timeKey].spend += cost;
           slotAgg[timeKey].convs += conv;
           slotAgg[timeKey].rev += rev;
+        }
+
+        // Compute raw totals in slotAgg
+        let rawCost = 0;
+        let rawConvs = 0;
+        let rawRev = 0;
+        for (const timeKey of Object.keys(slotAgg)) {
+          rawCost += slotAgg[timeKey].spend;
+          rawConvs += slotAgg[timeKey].convs;
+          rawRev += slotAgg[timeKey].rev;
+        }
+
+        // Adjust slot values to exactly match targets from daily snapshot (self-healing distribution)
+        for (const timeKey of Object.keys(slotAgg)) {
+          // Scale cost
+          if (rawCost > 0) {
+            slotAgg[timeKey].spend = (slotAgg[timeKey].spend / rawCost) * targetCost;
+          } else {
+            slotAgg[timeKey].spend = targetCost / Object.keys(slotAgg).length;
+          }
+
+          // Scale conversions
+          if (rawConvs > 0) {
+            slotAgg[timeKey].convs = (slotAgg[timeKey].convs / rawConvs) * targetConvs;
+          } else {
+            if (targetCost > 0) {
+              slotAgg[timeKey].convs = (slotAgg[timeKey].spend / targetCost) * targetConvs;
+            } else {
+              slotAgg[timeKey].convs = targetConvs / Object.keys(slotAgg).length;
+            }
+          }
+
+          // Scale revenue
+          if (rawRev > 0) {
+            slotAgg[timeKey].rev = (slotAgg[timeKey].rev / rawRev) * targetRev;
+          } else {
+            if (targetConvs > 0) {
+              slotAgg[timeKey].rev = (slotAgg[timeKey].convs / targetConvs) * targetRev;
+            } else if (targetCost > 0) {
+              slotAgg[timeKey].rev = (slotAgg[timeKey].spend / targetCost) * targetRev;
+            } else {
+              slotAgg[timeKey].rev = targetRev / Object.keys(slotAgg).length;
+            }
+          }
         }
 
         const sortedTimes = Object.keys(slotAgg).sort();
@@ -151,30 +218,7 @@ export async function GET(request: Request) {
         
         return NextResponse.json(chartData);
       } else {
-        // Fallback: Query from daily campaignsSnapshot and generate using weights
-        const dailyData = await db.select({
-          costMicros: campaignsSnapshot.costMicros,
-          conversions: campaignsSnapshot.googleConversions,
-          realConversions: campaignsSnapshot.realConversions,
-          successRevMicros: campaignsSnapshot.realConversionValueSuccessMicros,
-        })
-        .from(campaignsSnapshot)
-        .where(and(
-          eq(campaignsSnapshot.customerId, customerId),
-          campaignId ? eq(campaignsSnapshot.campaignId, campaignId) : undefined,
-          eq(campaignsSnapshot.date, start)
-        ));
-
-        let totalCost = 0;
-        let totalConvs = 0;
-        let totalRev = 0;
-        for (const d of dailyData) {
-          totalCost += parseInt(d.costMicros || '0') / 1000000;
-          totalConvs += d.realConversions || parseFloat(d.conversions || '0');
-          totalRev += parseInt(d.successRevMicros || '0') / 1000000;
-        }
-
-        const chartData = generate30MinIntervals(totalCost, totalConvs, totalRev);
+        const chartData = generate30MinIntervals(targetCost, targetConvs, targetRev);
         return NextResponse.json(chartData);
       }
     } else {
