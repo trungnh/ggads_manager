@@ -198,6 +198,27 @@ export default async function DashboardPage({
 
   const selectedRangeDates = getDatesRange(startDateStr, endDateStr);
 
+  // Generate calendar dates for the chart based on selected relative option
+  let chartDates: string[] = [];
+  if (dateParam === "today") {
+    const start = new Date();
+    start.setDate(start.getDate() - 6);
+    chartDates = getDatesRange(start.toISOString().split('T')[0], actualTodayDate);
+  } else if (dateParam === "yesterday") {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const start = new Date(yesterday);
+    start.setDate(start.getDate() - 6);
+    chartDates = getDatesRange(start.toISOString().split('T')[0], yesterdayStr);
+  } else {
+    chartDates = getDatesRange(startDateStr, endDateStr);
+  }
+
+  // Get unique months in the viewed date range to only load relevant monthly reports
+  const allViewedDates = Array.from(new Set([...selectedRangeDates, ...chartDates]));
+  const viewedMonths = Array.from(new Set(allViewedDates.map(d => d.substring(0, 7))));
+
   // 1. Fetch user's products
   const userProducts = await db
     .select()
@@ -282,7 +303,10 @@ export default async function DashboardPage({
     })
     .from(revenueReports)
     .innerJoin(products, eq(revenueReports.productId, products.id))
-    .where(eq(revenueReports.userId, session.user.id));
+    .where(and(
+      eq(revenueReports.userId, session.user.id),
+      inArray(revenueReports.month, viewedMonths)
+    ));
 
   // Filter reports to only keep those mapped to the selected accounts
   const filteredReports = userReports.filter(report => {
@@ -463,22 +487,7 @@ export default async function DashboardPage({
   const monthlyBudgetGoal = totalBudget * 30;
   const budgetSpentPct = monthlyBudgetGoal > 0 ? (totalCost / monthlyBudgetGoal) * 100 : 0;
 
-  // Generate calendar dates for the chart based on selected relative option
-  let chartDates: string[] = [];
-  if (dateParam === "today") {
-    const start = new Date();
-    start.setDate(start.getDate() - 6);
-    chartDates = getDatesRange(start.toISOString().split('T')[0], actualTodayDate);
-  } else if (dateParam === "yesterday") {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    const start = new Date(yesterday);
-    start.setDate(start.getDate() - 6);
-    chartDates = getDatesRange(start.toISOString().split('T')[0], yesterdayStr);
-  } else {
-    chartDates = getDatesRange(startDateStr, endDateStr);
-  }
+  // (chartDates was already calculated early)
 
   let chartData: any[] = [];
   if (chartDates.length > 0) {
