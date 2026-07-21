@@ -291,7 +291,7 @@ export default async function DashboardPage({
       : typeof report.adsAccountIds === 'string'
         ? JSON.parse(report.adsAccountIds)
         : [];
-    return reportAccs.some((accId: string) => accountIds.includes(accId));
+    return reportAccs.some((accId: string) => activeCustomerIds.includes(accId));
   });
 
   // Dynamically sync today's filtered revenue reports to fetch the latest actual Pancake CRM values
@@ -329,9 +329,9 @@ export default async function DashboardPage({
   const formatDateStr = (dateVal: any) => {
     if (!dateVal) return "";
     if (dateVal instanceof Date) {
-      const y = dateVal.getFullYear();
-      const m = String(dateVal.getMonth() + 1).padStart(2, '0');
-      const d = String(dateVal.getDate()).padStart(2, '0');
+      const y = dateVal.getUTCFullYear();
+      const m = String(dateVal.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(dateVal.getUTCDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
     }
     if (typeof dateVal === 'string') {
