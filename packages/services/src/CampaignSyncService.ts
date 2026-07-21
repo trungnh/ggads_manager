@@ -444,9 +444,10 @@ export class CampaignSyncService {
           deltaRevSuccess = currentRevSuccess - prevRevSuccess;
 
           if (deltaCost < BigInt(0)) deltaCost = BigInt(0);
-          if (deltaConvs < 0) deltaConvs = 0;
-          if (deltaConvsSuccess < 0) deltaConvsSuccess = 0;
-          if (deltaRevSuccess < BigInt(0)) deltaRevSuccess = BigInt(0);
+          // Do not clamp conversions/revenue deltas to 0 to prevent upward drift when orders fluctuate
+          // if (deltaConvs < 0) deltaConvs = 0;
+          // if (deltaConvsSuccess < 0) deltaConvsSuccess = 0;
+          // if (deltaRevSuccess < BigInt(0)) deltaRevSuccess = BigInt(0);
         }
 
         // 2. Increment delta in the campaignChartPoints table atomically

@@ -680,12 +680,24 @@ async function scheduleJobs() {
   });
   console.log('[Worker] Scheduled dayparting job to run every 5 minutes.');
 
+  // Clean up old repeatable jobs for revenueQueue to avoid duplicates
+  try {
+    const jobs = await revenueQueue.getRepeatableJobs();
+    for (const j of jobs) {
+      if (j.name === 'sync-daily-revenue') {
+        await revenueQueue.removeRepeatableByKey(j.key);
+      }
+    }
+  } catch (err) {
+    console.error('[Worker] Failed to clean up old revenue repeatable jobs:', err);
+  }
+
   await revenueQueue.add('sync-daily-revenue', {}, {
     repeat: {
-      pattern: '0 23 * * *', // Every day at 23:00
+      pattern: '*/10 * * * *', // Every 10 minutes
     }
   });
-  console.log('[Worker] Scheduled revenue sync job to run daily at 23:00.');
+  console.log('[Worker] Scheduled revenue sync job to run every 10 minutes.');
 
   await placementsQueue.add('auto-exclude-placements', {}, {
     repeat: {

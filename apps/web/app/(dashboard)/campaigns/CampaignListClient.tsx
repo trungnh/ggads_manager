@@ -83,13 +83,44 @@ export default function CampaignListClient({ account, accounts, initialCampaigns
   }, [account.customerId, startDate, endDate])
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter(c => {
+    let list = [...campaigns];
+    const hasOffline = list.some(c => c.id === 'offline');
+    if (showOfflineOrders && !hasOffline) {
+      list.push({
+        id: 'offline',
+        name: 'Đơn hàng OFFLINE',
+        status: 'ENABLED',
+        biddingStrategyType: 'OFFLINE',
+        budget: '0',
+        cost: '0',
+        clicks: 0,
+        conversions: '0',
+        conversionValue: '0',
+        ctr: 0,
+        avgCpc: '0',
+        realConversions: 0,
+        realConversionValue: '0',
+        realPending: 0,
+        realSuccess: 0,
+        realSuccessValue: '0',
+        cfCost: '0',
+        isExcluded: true
+      });
+    }
+
+    return list.filter(c => {
+      if (c.id === 'offline') {
+        if (!showOfflineOrders) return false;
+        // Bypassing showSpendOnly check for offline campaign to prevent it from being hidden when "Chi tiêu > 0" is selected
+        const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
+        return matchSearch;
+      }
       const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
       const matchStatus = showEnabledOnly ? c.status === 'ENABLED' : true;
       const matchSpend = showSpendOnly ? parseInt(c.cost) > 0 : true;
       return matchSearch && matchStatus && matchSpend;
-    })
-  }, [campaigns, search, showEnabledOnly, showSpendOnly])
+    });
+  }, [campaigns, search, showEnabledOnly, showSpendOnly, showOfflineOrders])
 
   const totals = useMemo(() => {
     return filteredCampaigns.reduce((acc, c) => ({

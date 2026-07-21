@@ -198,7 +198,80 @@ export default async function DashboardPage({
 
   const selectedRangeDates = getDatesRange(startDateStr, endDateStr);
 
-  // 1. Fetch user's revenue reports joined with products to retrieve adsAccountIds
+  // 1. Fetch user's products
+  const userProducts = await db
+    .select()
+    .from(products)
+    .where(eq(products.userId, session.user.id));
+
+  // Auto-create current month reports for any product missing one
+  const currentMonthStr = actualTodayDate.substring(0, 7);
+  const currentMonthReports = await db
+    .select()
+    .from(revenueReports)
+    .where(
+      and(
+        eq(revenueReports.userId, session.user.id),
+        eq(revenueReports.month, currentMonthStr)
+      )
+    );
+
+  for (const prod of userProducts) {
+    const hasReport = currentMonthReports.some(r => r.productId === prod.id);
+    if (!hasReport) {
+      try {
+        console.log(`[DASHBOARD_AUTO] Creating current month report for product ${prod.name}`);
+        const defaultImportPrice = Number(prod.importPriceMicros || 0) / 1000000;
+        const defaultShippingFee = Number(prod.shippingFee || 0) / 1000000;
+        const defaultReturnRate = Number(prod.returnRate || 0);
+
+        const initialRates = {
+          importPrice: defaultImportPrice,
+          shippingFee: defaultShippingFee,
+          returnRate: defaultReturnRate,
+          incomeTax: 0.015,
+          adsTax: 0.10,
+          paymentFee: 0.012
+        };
+
+        const name = `${prod.name} - Báo cáo Bán hàng Tháng ${currentMonthStr.split('-').reverse().join('/')}`;
+        const newReports = await db.insert(revenueReports).values({
+          userId: session.user.id,
+          productId: prod.id,
+          name,
+          month: currentMonthStr,
+          rates: initialRates
+        }).returning();
+
+        const report = newReports[0];
+
+        // Initialize daily rows
+        const [year, mVal] = currentMonthStr.split('-').map(Number);
+        const totalDaysInMonth = new Date(year, mVal, 0).getDate();
+        const dailyRowsToInsert = [];
+        for (let day = 1; day <= totalDaysInMonth; day++) {
+          const dateStr = `${year}-${String(mVal).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          dailyRowsToInsert.push({
+            reportId: report.id,
+            date: dateStr,
+            adsCostMicros: "0",
+            orders: 0,
+            quantity: 0,
+            revenueMicros: "0",
+            shipCostMicros: "0",
+            goodsCostMicros: "0",
+            profitMicros: "0",
+            isLocked: false
+          });
+        }
+        await db.insert(revenueReportDaily).values(dailyRowsToInsert);
+      } catch (err) {
+        console.error(`[DASHBOARD_AUTO] Failed to create report for ${prod.name}:`, err);
+      }
+    }
+  }
+
+  // 2. Fetch user's revenue reports joined with products to retrieve adsAccountIds
   const userReports = await db
     .select({
       id: revenueReports.id,
@@ -267,11 +340,7 @@ export default async function DashboardPage({
     return String(dateVal);
   };
 
-  // Fetch products and match rates to support real-time dynamic profit math
-  const userProducts = await db
-    .select()
-    .from(products)
-    .where(eq(products.userId, session.user.id));
+  // Reusing userProducts query results from the top-level declaration
 
   const matchProduct = (snapName: string) => {
     if (!snapName) return null;
