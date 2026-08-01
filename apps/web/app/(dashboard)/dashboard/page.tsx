@@ -331,25 +331,6 @@ export default async function DashboardPage({
     }
   }
 
-  let selectedRangeReports: any[] = [];
-  if (filteredReports.length > 0) {
-    const reportIds = filteredReports.map(r => r.id);
-    selectedRangeReports = await db
-      .select({
-        orders: revenueReportDaily.orders,
-        revenueMicros: revenueReportDaily.revenueMicros,
-        adsCostMicros: revenueReportDaily.adsCostMicros,
-        profitMicros: revenueReportDaily.profitMicros,
-        date: revenueReportDaily.date,
-      })
-      .from(revenueReportDaily)
-      .where(and(
-        inArray(revenueReportDaily.reportId, reportIds),
-        gte(revenueReportDaily.date, startDateStr),
-        lte(revenueReportDaily.date, endDateStr)
-      ));
-  }
-
   const formatDateStr = (dateVal: any) => {
     if (!dateVal) return "";
     if (dateVal instanceof Date) {
@@ -363,6 +344,33 @@ export default async function DashboardPage({
     }
     return String(dateVal);
   };
+
+  let selectedRangeReports: any[] = [];
+  if (filteredReports.length > 0) {
+    const reportIds = filteredReports.map(r => r.id);
+    const rawDaily = await db
+      .select({
+        orders: revenueReportDaily.orders,
+        revenueMicros: revenueReportDaily.revenueMicros,
+        adsCostMicros: revenueReportDaily.adsCostMicros,
+        profitMicros: revenueReportDaily.profitMicros,
+        date: revenueReportDaily.date,
+        reportMonth: revenueReports.month,
+      })
+      .from(revenueReportDaily)
+      .innerJoin(revenueReports, eq(revenueReportDaily.reportId, revenueReports.id))
+      .where(and(
+        inArray(revenueReportDaily.reportId, reportIds),
+        gte(revenueReportDaily.date, startDateStr),
+        lte(revenueReportDaily.date, endDateStr)
+      ));
+
+    // Filter to ensure daily report date matches monthly report month
+    selectedRangeReports = rawDaily.filter(r => {
+      const dStr = formatDateStr(r.date);
+      return dStr.substring(0, 7) === r.reportMonth;
+    });
+  }
 
   // Reusing userProducts query results from the top-level declaration
 
@@ -502,19 +510,27 @@ export default async function DashboardPage({
     let chartReportsData: any[] = [];
     if (filteredReports.length > 0) {
       const reportIds = filteredReports.map(r => r.id);
-      chartReportsData = await db
+      const rawChartDaily = await db
         .select({
           orders: revenueReportDaily.orders,
           revenueMicros: revenueReportDaily.revenueMicros,
           adsCostMicros: revenueReportDaily.adsCostMicros,
           profitMicros: revenueReportDaily.profitMicros,
           date: revenueReportDaily.date,
+          reportMonth: revenueReports.month,
         })
         .from(revenueReportDaily)
+        .innerJoin(revenueReports, eq(revenueReportDaily.reportId, revenueReports.id))
         .where(and(
           inArray(revenueReportDaily.reportId, reportIds),
           inArray(revenueReportDaily.date, chartDates)
         ));
+
+      // Filter to ensure daily report date matches monthly report month
+      chartReportsData = rawChartDaily.filter(r => {
+        const dStr = formatDateStr(r.date);
+        return dStr.substring(0, 7) === r.reportMonth;
+      });
     }
 
     chartData = chartDates.map(dateStr => {

@@ -396,6 +396,13 @@ export class RevenueService {
     });
     if (!report) throw new Error("Report not found");
 
+    // Guard: Verify that the date matches the month of the monthly report to prevent duplicate daily sync across months
+    const dateMonth = dateStr.substring(0, 7); // "YYYY-MM"
+    if (report.month !== dateMonth) {
+      console.log(`[REVENUE_SERVICE] Skipping sync: date ${dateStr} does not belong to report month ${report.month} (reportId: ${reportId})`);
+      return;
+    }
+
     const product = await db.query.products.findFirst({
       where: eq(products.id, report.productId!)
     });
